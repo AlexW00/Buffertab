@@ -209,9 +209,9 @@ export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
         >
           <div className="microphone-section">
             {isRecording ? (
-              // Recording indicator (pulsing circle)
+              // Recording indicator with spinner
               <div className="recording-indicator">
-                <Mic size={16} />
+                <div className="spinner" />
               </div>
             ) : (
               // Microphone icon

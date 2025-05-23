@@ -264,7 +264,7 @@ body {
   cursor: pointer;
   transition: all 0.2s ease;
   outline: none;
-  padding: 6px;
+  padding: 6px 12px;
   overflow: hidden;
   font-size: 12px;
   font-family: 'JetBrains Mono', monospace;
@@ -277,29 +277,14 @@ body {
   color: var(--text-dark);
 }
 
-.app.light .combined-button {
-  background-color: var(--card-bg-light);
-  color: var(--text-light);
-}
-
-.app.dark .combined-button {
-  background-color: var(--card-bg-dark);
-  color: var(--text-dark);
-}
-
 .combined-button:hover {
   background: rgba(59, 130, 246, 0.1);
   border-color: #3B82F6;
 }
 
-.combined-button.recording {
-  background: #EF4444;
-  border-color: #DC2626;
-  color: white;
-}
-
 .combined-button.recording:hover {
-  background: #DC2626;
+  background: rgba(59, 130, 246, 0.1);
+  border-color: #3B82F6;
 }
 
 .microphone-section {
@@ -307,6 +292,7 @@ body {
   align-items: center;
   justify-content: center;
   padding-right: 6px;
+  min-width: 20px; /* Ensure consistent width */
 }
 
 .caret-section {
@@ -317,6 +303,7 @@ body {
   border-left: 1px solid var(--border-light);
   opacity: 0.6;
   transition: opacity 0.2s ease;
+  min-width: 16px; /* Ensure consistent width */
 }
 
 .app.dark .caret-section {
@@ -327,16 +314,28 @@ body {
   opacity: 1;
 }
 
-.combined-button.recording .caret-section {
-  border-left-color: rgba(255, 255, 255, 0.3);
+.recording-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.recording-indicator {
-  animation: pulse 1.5s ease-in-out infinite;
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
-.recording-indicator {
-  animation: pulse 1.5s ease-in-out infinite;
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes pulse {

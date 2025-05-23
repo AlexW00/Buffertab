@@ -26,17 +26,44 @@ function EditorApp() {
     return () => mediaQuery.removeEventListener('change', handler)
   }, [])
 
-  // Simple base64 encoding for URL
-  const encodeContent = useCallback((text: string): string => {
+  // Unicode-safe base64 encoding with compression for URL
+  const encodeContent = useCallback(async (text: string): Promise<string> => {
     if (!text) return ''
-    return btoa(text)
+    try {
+      // First encode to UTF-8 bytes
+      const utf8Bytes = new TextEncoder().encode(text)
+      
+      // Compress using gzip
+      const compressionStream = new CompressionStream('gzip')
+      const compressedStream = new Response(utf8Bytes).body?.pipeThrough(compressionStream)
+      const compressedBytes = new Uint8Array(await new Response(compressedStream).arrayBuffer())
+      
+      // Convert to base64
+      const binaryString = Array.from(compressedBytes, byte => String.fromCharCode(byte)).join('')
+      return btoa(binaryString)
+    } catch {
+      return '' // Return empty if encoding fails
+    }
   }, [])
 
-  // Simple base64 decoding from URL
-  const decodeContent = useCallback((encoded: string): string => {
+  // Unicode-safe base64 decoding with decompression from URL
+  const decodeContent = useCallback(async (encoded: string): Promise<string> => {
     if (!encoded) return ''
     try {
-      return atob(encoded)
+      // First decode from base64
+      const binaryString = atob(encoded)
+      const compressedBytes = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        compressedBytes[i] = binaryString.charCodeAt(i)
+      }
+      
+      // Decompress using gzip
+      const decompressionStream = new DecompressionStream('gzip')
+      const decompressedStream = new Response(compressedBytes).body?.pipeThrough(decompressionStream)
+      const decompressedBytes = new Uint8Array(await new Response(decompressedStream).arrayBuffer())
+      
+      // Decode from UTF-8
+      return new TextDecoder().decode(decompressedBytes)
     } catch {
       return '' // Return empty if decoding fails
     }
@@ -46,17 +73,18 @@ function EditorApp() {
   useEffect(() => {
     const hash = window.location.hash.slice(1)
     if (hash) {
-      const decodedContent = decodeContent(hash)
-      if (decodedContent) {
-        setMarkdownValue(decodedContent)
-      }
+      decodeContent(hash).then(decodedContent => {
+        if (decodedContent) {
+          setMarkdownValue(decodedContent)
+        }
+      })
     }
   }, [decodeContent])
 
   // Update URL and usage percentage when content changes
-  const handleContentChange = useCallback((value?: string) => {
+  const handleContentChange = useCallback(async (value?: string) => {
     const content = value || ''
-    const encoded = encodeContent(content)
+    const encoded = await encodeContent(content)
     const urlLength = encoded.length + 1 // +1 for the # character
     const remaining = MAX_URL_LENGTH - urlLength
     const percentage = Math.round((urlLength / MAX_URL_LENGTH) * 100)

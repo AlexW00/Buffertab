@@ -1,0 +1,189 @@
+/* Import Berkeley Mono with fallbacks */
+@import url('https://fonts.googleapis.com/css2?family=Berkeley+Mono:ital,wght@0,400;0,500;1,400;1,500&display=swap');
+
+:root {
+  /* Light theme colors */
+  --bg-light: #f7f7f7;
+  --card-bg-light: #ffffff;
+  --text-light: #2d3748;
+  --counter-text-light: #718096;
+  --border-light: #e2e8f0;
+  --shadow-light: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  
+  /* Dark theme colors */
+  --bg-dark: #1a202c;
+  --card-bg-dark: #2d3748;
+  --text-dark: #f7fafc;
+  --counter-text-dark: #a0aec0;
+  --border-dark: #4a5568;
+  --shadow-dark: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Berkeley Mono', 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace;
+  line-height: 1.5;
+}
+
+body {
+  overflow: hidden;
+}
+
+#app {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.app {
+  height: 100vh;
+  width: 100vw;
+  padding: 16px;
+  transition: background-color 0.3s ease;
+}
+
+.app.light {
+  background-color: var(--bg-light);
+  color: var(--text-light);
+}
+
+.app.dark {
+  background-color: var(--bg-dark);
+  color: var(--text-dark);
+}
+
+.editor-container {
+  height: 100%;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-light);
+}
+
+.app.light .editor-container {
+  background-color: var(--card-bg-light);
+  box-shadow: var(--shadow-light);
+  border: 1px solid var(--border-light);
+}
+
+.app.dark .editor-container {
+  background-color: var(--card-bg-dark);
+  box-shadow: var(--shadow-dark);
+  border: 1px solid var(--border-dark);
+}
+
+.editor-wrapper {
+  height: calc(100% - 40px);
+  width: 100%;
+  position: relative;
+}
+
+/* React MD Editor styles */
+.w-md-editor {
+  height: 100% !important;
+  border: none !important;
+  background-color: transparent !important;
+}
+
+.w-md-editor-text-container {
+  height: 100% !important;
+}
+
+.w-md-editor-text {
+  height: 100% !important;
+  font-family: 'Berkeley Mono', 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace !important;
+  padding: 32px !important;
+  border: none !important;
+  outline: none !important;
+}
+
+.w-md-editor-text:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Theme support for React MD Editor */
+[data-color-mode="light"] .w-md-editor {
+  background-color: var(--card-bg-light) !important;
+  color: var(--text-light) !important;
+}
+
+[data-color-mode="dark"] .w-md-editor {
+  background-color: var(--card-bg-dark) !important;
+  color: var(--text-dark) !important;
+}
+
+[data-color-mode="light"] .w-md-editor-text {
+  background-color: var(--card-bg-light) !important;
+  color: var(--text-light) !important;
+}
+
+[data-color-mode="dark"] .w-md-editor-text {
+  background-color: var(--card-bg-dark) !important;
+  color: var(--text-dark) !important;
+}
+
+/* Character counter */
+.character-counter {
+  position: absolute;
+  bottom: 12px;
+  right: 16px;
+  font-size: 12px;
+  font-family: 'Berkeley Mono', 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.app.light .character-counter {
+  color: var(--counter-text-light);
+  background-color: rgba(247, 250, 252, 0.9);
+  border: 1px solid var(--border-light);
+}
+
+.app.dark .character-counter {
+  color: var(--counter-text-dark);
+  background-color: rgba(26, 32, 44, 0.9);
+  border: 1px solid var(--border-dark);
+}
+
+.character-counter.limit-reached {
+  color: #e53e3e !important;
+  background-color: rgba(254, 226, 226, 0.9) !important;
+  border-color: #feb2b2 !important;
+}
+
+.app.dark .character-counter.limit-reached {
+  background-color: rgba(69, 26, 26, 0.9) !important;
+  border-color: #c53030 !important;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .app {
+    padding: 8px;
+  }
+  
+  .w-md-editor-text {
+    padding: 24px !important;
+  }
+  
+  .character-counter {
+    bottom: 8px;
+    right: 12px;
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+}

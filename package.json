@@ -1,0 +1,28 @@
+{
+  "name": "buffertab",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.5.0",
+    "path-browserify": "^1.0.1",
+    "process": "^0.11.10",
+    "typescript": "5.8.3",
+    "url-polyfill": "^1.1.13",
+    "vite": "6.3.5"
+  },
+  "dependencies": {
+    "@types/pako": "2.0.3",
+    "@types/react": "19.1.5",
+    "@types/react-dom": "19.1.5",
+    "@uiw/react-md-editor": "^4.0.7",
+    "pako": "2.1.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}

@@ -44,7 +44,7 @@ body {
 .app {
   height: 100vh;
   width: 100vw;
-  padding: 16px;
+  padding: 8px;
   transition: background-color 0.3s ease;
 }
 
@@ -172,10 +172,6 @@ body {
 
 /* Responsive design */
 @media (max-width: 768px) {
-  .app {
-    padding: 8px;
-  }
-  
   .w-md-editor-text {
     padding: 24px !important;
   }

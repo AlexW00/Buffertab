@@ -7,6 +7,7 @@ interface VoiceRecorderProps {
 }
 
 const OPENAI_API_KEY_LENGTH = 51 // OpenAI API keys are 51 characters long
+const STORAGE_KEY = 'buffertab-openai-api-key'
 
 export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
   const [isExpanded, setIsExpanded] = useState(false)
@@ -18,6 +19,18 @@ export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
   
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // Load API key from localStorage on mount
+  useEffect(() => {
+    const savedKey = localStorage.getItem(STORAGE_KEY)
+    if (savedKey) {
+      setApiKey(savedKey)
+      // Validate the saved key
+      if (savedKey.length === OPENAI_API_KEY_LENGTH) {
+        validateApiKey(savedKey)
+      }
+    }
+  }, [])
 
   // Validate API key when it reaches the required length
   const validateApiKey = useCallback(async (key: string) => {
@@ -33,9 +46,13 @@ export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
       // Test the API key with a minimal request
       await openai.models.list()
       setKeyStatus('valid')
+      // Save the valid key to localStorage
+      localStorage.setItem(STORAGE_KEY, key)
     } catch (error) {
       console.error('API key validation failed:', error)
       setKeyStatus('invalid')
+      // Remove invalid key from localStorage
+      localStorage.removeItem(STORAGE_KEY)
     }
   }, [])
 
@@ -46,6 +63,8 @@ export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
     
     if (value.length === 0) {
       setKeyStatus('idle')
+      // Clear key from localStorage when empty
+      localStorage.removeItem(STORAGE_KEY)
     } else if (value.length === OPENAI_API_KEY_LENGTH) {
       validateApiKey(value)
     } else {

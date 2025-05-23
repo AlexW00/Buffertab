@@ -101,21 +101,40 @@ body {
   height: 100% !important;
   border: none !important;
   background: transparent !important;
+  overflow: auto !important;
 }
 
 .w-md-editor-text {
-  height: 100% !important;
+  height: auto !important;
+  min-height: 100% !important;
   font-family: 'Berkeley Mono', 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace !important;
-  padding: 32px !important;
+  padding: 20px !important;
   border: none !important;
   outline: none !important;
   background: transparent !important;
   resize: none !important;
+  box-sizing: border-box !important;
+  line-height: 1.5 !important;
 }
 
 .w-md-editor-text:focus {
   outline: none !important;
   box-shadow: none !important;
+}
+
+/* Ensure proper scrolling behavior */
+.w-md-editor .w-md-editor-text-container > div {
+  height: 100% !important;
+}
+
+.w-md-editor .w-md-editor-text-input {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* Prevent text overlap issues */
+.w-md-editor-text-container * {
+  box-sizing: border-box !important;
 }
 
 /* Theme support for React MD Editor */
@@ -180,7 +199,9 @@ body {
 /* Responsive design */
 @media (max-width: 768px) {
   .w-md-editor-text {
-    padding: 24px !important;
+    padding: 16px !important;
+    min-height: 100% !important;
+    height: auto !important;
   }
   
   .character-counter {

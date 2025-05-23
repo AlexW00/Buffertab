@@ -14,6 +14,7 @@ export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
   const [apiKey, setApiKey] = useState('')
   const [keyStatus, setKeyStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle')
   const [isRecording, setIsRecording] = useState(false)
+  const [isTranscribing, setIsTranscribing] = useState(false)
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null)
   
   const inputRef = useRef<HTMLInputElement>(null)
@@ -143,6 +144,11 @@ export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
       return
     }
 
+    // Prevent clicking during transcription
+    if (isTranscribing) {
+      return
+    }
+
     if (isRecording) {
       stopRecording()
     } else {
@@ -195,6 +201,8 @@ export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
       return
     }
 
+    setIsTranscribing(true)
+
     try {
       const openai = new OpenAI({ 
         apiKey: apiKey,
@@ -205,7 +213,7 @@ export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
 
       const transcription = await openai.audio.transcriptions.create({
         file: audioFile,
-        model: "gpt-4o-mini-transcribe",
+        model: "whisper-1",
         response_format: "text",
       })
 
@@ -217,6 +225,8 @@ export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
     } catch (error) {
       console.error('Transcription error:', error)
       alert('Failed to transcribe audio. Please check your API key and try again.')
+    } finally {
+      setIsTranscribing(false)
     }
   }, [apiKey, keyStatus, onTranscription])
 
@@ -245,12 +255,24 @@ export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
       
       <div className="voice-recorder-controls">
         <button
-          className={`combined-button ${isRecording ? 'recording' : ''}`}
+          className={`combined-button ${isRecording ? 'recording' : ''} ${isTranscribing ? 'transcribing' : ''}`}
           onClick={handleCombinedButtonClick}
-          title={keyStatus !== 'valid' ? 'Please enter a valid API key first' : 'Click microphone to record, click arrow to expand'}
+          disabled={isTranscribing}
+          title={
+            isTranscribing 
+              ? 'Transcribing audio...' 
+              : keyStatus !== 'valid' 
+                ? 'Please enter a valid API key first' 
+                : 'Click microphone to record, click arrow to expand'
+          }
         >
           <div className="microphone-section">
-            {isRecording ? (
+            {isTranscribing ? (
+              // Transcribing indicator with different spinner
+              <div className="transcribing-indicator">
+                <div className="transcribing-spinner" />
+              </div>
+            ) : isRecording ? (
               // Recording indicator with spinner
               <div className="recording-indicator">
                 <div className="spinner" />

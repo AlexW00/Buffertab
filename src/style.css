@@ -291,6 +291,22 @@ body {
   border-color: #3B82F6;
 }
 
+.combined-button.transcribing {
+  background: rgba(251, 191, 36, 0.1);
+  border-color: #F59E0B;
+  cursor: not-allowed;
+}
+
+.combined-button.transcribing:hover {
+  background: rgba(251, 191, 36, 0.1);
+  border-color: #F59E0B;
+}
+
+.combined-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 .microphone-section {
   display: flex;
   align-items: center;
@@ -324,6 +340,12 @@ body {
   justify-content: center;
 }
 
+.transcribing-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .spinner {
   width: 16px;
   height: 16px;
@@ -331,6 +353,15 @@ body {
   border-top: 2px solid currentColor;
   border-radius: 50%;
   animation: spin 1s linear infinite;
+}
+
+.transcribing-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid #F59E0B;
+  border-radius: 50%;
+  animation: spin 1.5s linear infinite;
 }
 
 @keyframes spin {

@@ -172,6 +172,8 @@ body {
   border-radius: 6px;
   transition: all 0.3s ease;
   pointer-events: none;
+  line-height: 1.5;
+  box-sizing: border-box;
 }
 
 .app.light .character-counter {
@@ -269,6 +271,8 @@ body {
   font-size: 12px;
   font-family: 'JetBrains Mono', monospace;
   font-weight: 500;
+  line-height: 1.5;
+  box-sizing: border-box;
 }
 
 .app.dark .combined-button {

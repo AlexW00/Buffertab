@@ -76,6 +76,33 @@ function EditorApp() {
     }
   }, [encodeContent])
 
+  // Handle voice transcription
+  const handleTranscription = useCallback((text: string) => {
+    // Try to insert text at cursor position by simulating typing
+    // This will trigger the onChange handler with the new content
+    const activeElement = document.activeElement
+    if (activeElement && activeElement.tagName === 'TEXTAREA') {
+      const textarea = activeElement as HTMLTextAreaElement
+      const start = textarea.selectionStart
+      const end = textarea.selectionEnd
+      const currentValue = textarea.value
+      
+      // Insert text at cursor position
+      const newValue = currentValue.slice(0, start) + text + currentValue.slice(end)
+      
+      // Update the textarea value and trigger change
+      textarea.value = newValue
+      textarea.setSelectionRange(start + text.length, start + text.length)
+      
+      // Trigger input event to update React state
+      const event = new Event('input', { bubbles: true })
+      textarea.dispatchEvent(event)
+    } else {
+      // Fallback: append to the end of the content
+      setMarkdownValue(prevValue => prevValue + text)
+    }
+  }, [])
+
   return (
     <div className={`app ${theme}`} data-color-mode={theme}>
       <div className="editor-container">
@@ -90,7 +117,7 @@ function EditorApp() {
           />
         </div>
         <div className="editor-controls">
-          <VoiceRecorder />
+          <VoiceRecorder onTranscription={handleTranscription} />
           <div className={`character-counter ${isLimitReached ? 'limit-reached' : ''}`}>
             {usagePercentage}% used
           </div>

@@ -15,7 +15,6 @@ export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
   const [keyStatus, setKeyStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle')
   const [isRecording, setIsRecording] = useState(false)
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null)
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
   
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -109,19 +108,11 @@ export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
         }
       }
 
-      recorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'audio/wav' })
-        setAudioBlob(blob)
+      recorder.onstop = async () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' })
         
-        // Download the audio file (as requested - this will change later)
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `recording-${Date.now()}.wav`
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
+        // Transcribe audio using OpenAI
+        await transcribeAudio(blob)
 
         // Stop all tracks
         stream.getTracks().forEach(track => track.stop())
@@ -196,6 +187,38 @@ export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
       handleMicrophoneClick()
     }
   }
+
+  // Transcribe audio using OpenAI
+  const transcribeAudio = useCallback(async (audioBlob: Blob) => {
+    if (keyStatus !== 'valid' || !apiKey) {
+      console.error('No valid API key available for transcription')
+      return
+    }
+
+    try {
+      const openai = new OpenAI({ 
+        apiKey: apiKey,
+        dangerouslyAllowBrowser: true
+      })
+
+      const audioFile = new File([audioBlob], 'recording.webm', { type: 'audio/webm' })
+
+      const transcription = await openai.audio.transcriptions.create({
+        file: audioFile,
+        model: "gpt-4o-mini-transcribe",
+        response_format: "text",
+      })
+
+      if (onTranscription && transcription) {
+        onTranscription(transcription)
+      }
+
+      console.log('Transcription completed:', transcription)
+    } catch (error) {
+      console.error('Transcription error:', error)
+      alert('Failed to transcribe audio. Please check your API key and try again.')
+    }
+  }, [apiKey, keyStatus, onTranscription])
 
   return (
     <div ref={containerRef} className="voice-recorder">

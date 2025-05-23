@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import MDEditor from '@uiw/react-md-editor'
 import '@uiw/react-md-editor/markdown-editor.css'
 import '@uiw/react-markdown-preview/markdown.css'
+import VoiceRecorder from './VoiceRecorder'
 
 const MAX_URL_LENGTH = 2048 // Safe URL length limit
 
@@ -88,8 +89,11 @@ function EditorApp() {
             preview="edit"
           />
         </div>
-        <div className={`character-counter ${isLimitReached ? 'limit-reached' : ''}`}>
-          {usagePercentage}% used
+        <div className="editor-controls">
+          <VoiceRecorder />
+          <div className={`character-counter ${isLimitReached ? 'limit-reached' : ''}`}>
+            {usagePercentage}% used
+          </div>
         </div>
       </div>
     </div>

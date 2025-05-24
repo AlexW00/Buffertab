@@ -7,7 +7,7 @@ import { Edit3, Split, Eye } from 'lucide-react'
 import VoiceRecorder from './VoiceRecorder'
 
 const MAX_URL_LENGTH = 2048 // Safe URL length limit
-const SAVE_DELAY = 3000 // 3 seconds delay after typing stops
+const SAVE_DELAY = 2000 // 2 seconds delay after typing stops
 
 function EditorApp() {
   const [usagePercentage, setUsagePercentage] = useState(0)
@@ -300,6 +300,12 @@ function EditorApp() {
       return !/\s$/.test(beforeText) && !/^\s/.test(afterText)
     }
 
+    // Helper function to update via handleContentChange to ensure debounced save
+    const updateWithContentChange = (newValue: string) => {
+      console.log('Updating transcribed text via handleContentChange:', newValue.slice(-50))
+      handleContentChange(newValue)
+    }
+
     // Try to insert text at cursor position by simulating typing
     // This will trigger the onChange handler with the new content
     const activeElement = document.activeElement
@@ -336,14 +342,15 @@ function EditorApp() {
         // Trigger input event to update React state
         const event = new Event('input', { bubbles: true })
         textarea.dispatchEvent(event)
+        
+        // Ensure the change is processed through our handler for debounced save
+        setTimeout(() => updateWithContentChange(newValue), 10)
       } catch (error) {
         console.warn('Error setting cursor position:', error)
-        // Fallback to React state update
-        setMarkdownValue(prevValue => {
-          const currentValue = prevValue || ''
-          const spacePrefix = currentValue && !/\s$/.test(currentValue) ? ' ' : ''
-          return currentValue + spacePrefix + text
-        })
+        // Fallback: update through handleContentChange
+        const currentValue = markdownValue || ''
+        const spacePrefix = currentValue && !/\s$/.test(currentValue) ? ' ' : ''
+        updateWithContentChange(currentValue + spacePrefix + text)
       }
     } else if (textarea && textarea instanceof HTMLTextAreaElement) {
       try {
@@ -359,24 +366,23 @@ function EditorApp() {
         // Trigger input event to update React state
         const event = new Event('input', { bubbles: true })
         textarea.dispatchEvent(event)
+        
+        // Ensure the change is processed through our handler for debounced save
+        setTimeout(() => updateWithContentChange(newValue), 10)
       } catch (error) {
         console.warn('Error in fallback text insertion:', error)
-        // Final fallback to React state
-        setMarkdownValue(prevValue => {
-          const currentValue = prevValue || ''
-          const spacePrefix = currentValue && !/\s$/.test(currentValue) ? ' ' : ''
-          return currentValue + spacePrefix + text
-        })
+        // Final fallback: update through handleContentChange
+        const currentValue = markdownValue || ''
+        const spacePrefix = currentValue && !/\s$/.test(currentValue) ? ' ' : ''
+        updateWithContentChange(currentValue + spacePrefix + text)
       }
     } else {
-      // Final fallback: use React state directly
-      setMarkdownValue(prevValue => {
-        const currentValue = prevValue || ''
-        const spacePrefix = currentValue && !/\s$/.test(currentValue) ? ' ' : ''
-        return currentValue + spacePrefix + text
-      })
+      // Final fallback: use handleContentChange directly
+      const currentValue = markdownValue || ''
+      const spacePrefix = currentValue && !/\s$/.test(currentValue) ? ' ' : ''
+      updateWithContentChange(currentValue + spacePrefix + text)
     }
-  }, [])
+  }, [handleContentChange, markdownValue])
 
   return (
     <div className={`app ${theme}`} data-color-mode={theme}>

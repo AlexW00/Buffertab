@@ -284,9 +284,10 @@ body {
 .api-key-input-container {
   position: absolute;
   bottom: 100%;
-  right: 0;
+  right: 16px; /* Align with center of caret section */
   margin-bottom: 8px;
   z-index: 1000;
+  transform: translateX(50%); /* Center the input above the caret */
 }
 
 .api-key-input {

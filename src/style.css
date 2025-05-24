@@ -111,7 +111,8 @@ body {
   height: auto !important;
   min-height: 100% !important;
   font-family: 'JetBrains Mono', monospace !important;
-  padding: 20px !important;
+  padding: 1.25rem !important;
+  padding-bottom: 5rem !important; /* Add extra bottom padding for scrolling whitespace */
   border: none !important;
   outline: none !important;
   background: transparent !important;
@@ -143,7 +144,8 @@ body {
 /* React MD Editor preview styles */
 .w-md-editor-preview {
   height: 100% !important;
-  padding: 20px !important;
+  padding: 1.25rem !important;
+  padding-bottom: 5rem !important; /* Add extra bottom padding for scrolling whitespace */
   border: none !important;
   background: transparent !important;
   overflow-y: auto !important;
@@ -483,7 +485,8 @@ body {
 /* Responsive design */
 @media (max-width: 768px) {
   .w-md-editor-text {
-    padding: 16px !important;
+    padding: 1rem !important;
+    padding-bottom: 5rem !important; /* Keep the same bottom padding on mobile */
     min-height: 100% !important;
     height: auto !important;
   }

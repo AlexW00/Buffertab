@@ -156,14 +156,21 @@ function EditorApp() {
   useEffect(() => {
     const hash = window.location.hash.slice(1)
     if (hash) {
-      decodeContent(hash).then(decodedContent => {
+      decodeContent(hash).then(async (decodedContent) => {
         if (decodedContent) {
           setMarkdownValue(decodedContent)
           lastSavedContentRef.current = decodedContent
+          
+          // Calculate and update usage percentage immediately after loading
+          const encoded = await encodeContent(decodedContent)
+          const urlLength = encoded.length + 1
+          const percentage = Math.round((urlLength / MAX_URL_LENGTH) * 100)
+          setUsagePercentage(percentage)
+          setIsLimitReached(urlLength > MAX_URL_LENGTH)
         }
       })
     }
-  }, [decodeContent])
+  }, [decodeContent, encodeContent])
 
   // Add event listeners for immediate saving on blur and mouse movement
   useEffect(() => {

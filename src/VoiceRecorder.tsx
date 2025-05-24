@@ -126,11 +126,39 @@ export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
     return () => document.removeEventListener('keydown', handleGlobalKeyDown)
   }, [keyStatus, isTranscribing, isRecording, mediaRecorder])
 
+  // Get supported audio format for the platform
+  const getSupportedMimeType = () => {
+    const mimeTypes = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/mp4',
+      'audio/mpeg',
+      'audio/wav',
+      'audio/ogg'
+    ]
+    
+    for (const mimeType of mimeTypes) {
+      if (MediaRecorder.isTypeSupported(mimeType)) {
+        return mimeType
+      }
+    }
+    
+    // Fallback - let the browser choose
+    return undefined
+  }
+
   // Start recording
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const recorder = new MediaRecorder(stream)
+      
+      // Get the best supported audio format
+      const mimeType = getSupportedMimeType()
+      const options = mimeType ? { mimeType } : undefined
+      
+      console.log('Using audio format:', mimeType || 'browser default')
+      
+      const recorder = new MediaRecorder(stream, options)
       const chunks: BlobPart[] = []
 
       recorder.ondataavailable = (event) => {
@@ -140,7 +168,11 @@ export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
       }
 
       recorder.onstop = async () => {
-        const blob = new Blob(chunks, { type: 'audio/webm' })
+        // Create blob with the actual type used by the recorder
+        const actualMimeType = recorder.mimeType || mimeType || 'audio/webm'
+        const blob = new Blob(chunks, { type: actualMimeType })
+        
+        console.log('Recording blob type:', actualMimeType, 'size:', blob.size)
         
         // Transcribe audio using OpenAI
         await transcribeAudio(blob)
@@ -239,7 +271,38 @@ export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
         dangerouslyAllowBrowser: true
       })
 
-      const audioFile = new File([audioBlob], 'recording.webm', { type: 'audio/webm' })
+      // Get the file extension based on the blob type
+      const getFileExtension = (mimeType: string): string => {
+        const typeMap: Record<string, string> = {
+          'audio/webm': 'webm',
+          'audio/mp4': 'mp4',
+          'audio/mpeg': 'mp3',
+          'audio/wav': 'wav',
+          'audio/ogg': 'ogg'
+        }
+        
+        // Check for exact match first
+        if (typeMap[mimeType]) {
+          return typeMap[mimeType]
+        }
+        
+        // Check for partial matches (e.g., "audio/webm;codecs=opus")
+        for (const [type, ext] of Object.entries(typeMap)) {
+          if (mimeType.includes(type)) {
+            return ext
+          }
+        }
+        
+        // Default fallback
+        return 'webm'
+      }
+
+      const extension = getFileExtension(audioBlob.type)
+      const filename = `recording.${extension}`
+      
+      console.log('Creating audio file:', filename, 'with type:', audioBlob.type)
+      
+      const audioFile = new File([audioBlob], filename, { type: audioBlob.type })
 
       const transcription = await openai.audio.transcriptions.create({
         file: audioFile,

@@ -183,7 +183,7 @@ body {
 .character-counter {
   display: flex;
   align-items: center;
-  height: auto;
+  height: 32px; /* Match combined button height */
   border-radius: 6px;
   border: 1px solid var(--border-light);
   background: var(--card-bg-light);
@@ -221,7 +221,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 8px 12px; /* Adjusted padding to fit 32px height */
   border: none;
   border-right: 1px solid var(--border-light);
   background: transparent;
@@ -232,6 +232,8 @@ body {
   cursor: pointer;
   transition: all 0.2s ease;
   outline: none;
+  height: 100%; /* Fill parent height */
+  box-sizing: border-box;
 }
 
 .app.dark .mode-section {
@@ -254,10 +256,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 12px;
+  padding: 8px 12px; /* Adjusted padding to match mode-section */
   opacity: 0.6;
   color: var(--counter-text-light);
   pointer-events: none;
+  height: 100%; /* Fill parent height */
+  box-sizing: border-box;
 }
 
 .app.dark .usage-section {
@@ -328,7 +332,7 @@ body {
 .combined-button {
   display: flex;
   align-items: center;
-  height: auto;
+  height: 32px; /* Set explicit height */
   border-radius: 6px;
   border: 1px solid var(--border-light);
   background: var(--card-bg-light);

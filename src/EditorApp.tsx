@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import MDEditor from '@uiw/react-md-editor'
 import '@uiw/react-md-editor/markdown-editor.css'
 import '@uiw/react-markdown-preview/markdown.css'
@@ -7,6 +7,7 @@ import { Edit3, Split, Eye } from 'lucide-react'
 import VoiceRecorder from './VoiceRecorder'
 
 const MAX_URL_LENGTH = 2048 // Safe URL length limit
+const SAVE_DELAY = 10000 // 10 seconds delay after typing stops
 
 function EditorApp() {
   const [usagePercentage, setUsagePercentage] = useState(0)
@@ -14,6 +15,11 @@ function EditorApp() {
   const [isLimitReached, setIsLimitReached] = useState(false)
   const [markdownValue, setMarkdownValue] = useState('')
   const [previewMode, setPreviewMode] = useState<'edit' | 'live' | 'view'>('edit')
+  
+  // Refs for debouncing and tracking
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const hasUnsavedChangesRef = useRef(false)
+  const lastSavedContentRef = useRef('')
 
   // Theme detection
   useEffect(() => {
@@ -95,21 +101,8 @@ function EditorApp() {
     }
   }, [])
 
-  // Load content from URL on mount
-  useEffect(() => {
-    const hash = window.location.hash.slice(1)
-    if (hash) {
-      decodeContent(hash).then(decodedContent => {
-        if (decodedContent) {
-          setMarkdownValue(decodedContent)
-        }
-      })
-    }
-  }, [decodeContent])
-
-  // Update URL and usage percentage when content changes
-  const handleContentChange = useCallback(async (value?: string) => {
-    const content = value || ''
+  // Save content to URL (debounced)
+  const saveToUrl = useCallback(async (content: string) => {
     const encoded = await encodeContent(content)
     const urlLength = encoded.length + 1 // +1 for the # character
     const remaining = MAX_URL_LENGTH - urlLength
@@ -119,16 +112,134 @@ function EditorApp() {
     setIsLimitReached(remaining < 0)
     
     if (remaining >= 0) {
-      // Update URL hash
+      // Update URL hash only if it's different
       if (window.location.hash.slice(1) !== encoded) {
         window.history.replaceState(null, '', `#${encoded}`)
       }
-      setMarkdownValue(content)
+      lastSavedContentRef.current = content
+      hasUnsavedChangesRef.current = false
     } else {
-      // If over limit, revert to previous content
+      // If over limit, mark as reached but don't save
       setIsLimitReached(true)
     }
   }, [encodeContent])
+
+  // Debounced save function
+  const debouncedSave = useCallback((content: string) => {
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+    }
+    
+    // Set new timeout
+    saveTimeoutRef.current = setTimeout(() => {
+      if (hasUnsavedChangesRef.current) {
+        saveToUrl(content)
+      }
+    }, SAVE_DELAY)
+  }, [saveToUrl])
+
+  // Immediate save function (for blur/mouse events)
+  const saveImmediately = useCallback((content: string) => {
+    // Clear any pending debounced save
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+      saveTimeoutRef.current = null
+    }
+    
+    if (hasUnsavedChangesRef.current) {
+      saveToUrl(content)
+    }
+  }, [saveToUrl])
+
+  // Load content from URL on mount
+  useEffect(() => {
+    const hash = window.location.hash.slice(1)
+    if (hash) {
+      decodeContent(hash).then(decodedContent => {
+        if (decodedContent) {
+          setMarkdownValue(decodedContent)
+          lastSavedContentRef.current = decodedContent
+        }
+      })
+    }
+  }, [decodeContent])
+
+  // Add event listeners for immediate saving on blur and mouse movement
+  useEffect(() => {
+    let hasMouseMoved = false
+    
+    const handleBlur = () => {
+      if (hasUnsavedChangesRef.current) {
+        saveImmediately(markdownValue)
+      }
+    }
+    
+    const handleMouseMove = () => {
+      if (!hasMouseMoved) {
+        hasMouseMoved = true
+        if (hasUnsavedChangesRef.current) {
+          saveImmediately(markdownValue)
+        }
+      }
+    }
+    
+    const handleFocus = () => {
+      hasMouseMoved = false
+    }
+    
+    // Add blur listener to the textarea specifically
+    const textarea = document.querySelector('.w-md-editor-text')
+    if (textarea) {
+      textarea.addEventListener('blur', handleBlur)
+    }
+    
+    // Add mouse move listener to detect user interaction elsewhere
+    document.addEventListener('mousemove', handleMouseMove)
+    
+    // Add focus listener to reset mouse movement tracking
+    document.addEventListener('focus', handleFocus, true)
+    
+    return () => {
+      if (textarea) {
+        textarea.removeEventListener('blur', handleBlur)
+      }
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('focus', handleFocus, true)
+    }
+  }, [markdownValue, saveImmediately])
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  // Handle content changes with immediate UI update and debounced saving
+  const handleContentChange = useCallback(async (value?: string) => {
+    const content = value || ''
+    
+    // Update UI immediately for responsive typing
+    setMarkdownValue(content)
+    
+    // Track that we have unsaved changes
+    if (content !== lastSavedContentRef.current) {
+      hasUnsavedChangesRef.current = true
+      
+      // Update usage percentage immediately for feedback
+      const encoded = await encodeContent(content)
+      const urlLength = encoded.length + 1
+      const percentage = Math.round((urlLength / MAX_URL_LENGTH) * 100)
+      setUsagePercentage(percentage)
+      setIsLimitReached(urlLength > MAX_URL_LENGTH)
+      
+      // Debounce the actual saving
+      debouncedSave(content)
+    }
+  }, [encodeContent, debouncedSave])
 
   // Map our internal mode to MDEditor's expected preview type
   const getMDEditorPreviewMode = (mode: 'edit' | 'live' | 'view'): 'edit' | 'live' | 'preview' => {

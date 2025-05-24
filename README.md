@@ -1,6 +1,6 @@
 # 📝 BufferTab
 
-A minimal markdown editor that lives in your browser's URL.
+Minimal markdown editor that lives in your browser's URL ➜ [check it out](https://alexw00.github.io/Buffertab)
 
 ![image](https://github.com/user-attachments/assets/9fefdcf3-6611-4b24-988c-f52ef389b471)
 
@@ -12,11 +12,7 @@ A minimal markdown editor that lives in your browser's URL.
 - **🌙 Dark/light theme** - Automatically adapts to your system preference
 - **📊 Character limit tracking** - Visual indicator of URL length usage
 
-## Usage
-
-Go to [BufferTab](https://alexw00.github.io/Buffertab/) and start editing!
-
-### Keyboard Shortcuts
+## Keyboard Shortcuts
 
 - **Cmd + Enter**: Start/stop recording
 - **Cmd + e**: Toggle editor/split/view mode

@@ -151,12 +151,18 @@ body {
 }
 
 [data-color-mode="light"] .w-md-editor-preview {
-  background-color: var(--card-bg-light) !important;
   color: var(--text-light) !important;
 }
 
+[data-color-mode="dark"] .w-md-editor {
+  --color-border-default: var(--border-dark) !important;
+}
+
+[data-color-mode="dark"] .wmde-markdown {
+  --color-canvas-default: transparent !important;
+}
+
 [data-color-mode="dark"] .w-md-editor-preview {
-  background-color: var(--card-bg-dark) !important;
   color: var(--text-dark) !important;
 }
 [data-color-mode="light"] .w-md-editor {

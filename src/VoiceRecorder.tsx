@@ -96,6 +96,36 @@ export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
     }
   }
 
+  // Handle global keyboard shortcut for Cmd+Enter
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault()
+        
+        // Store the currently focused element before handling microphone
+        const activeElement = document.activeElement
+        
+        handleMicrophoneClick()
+        
+        // If the focus was in the editor, restore it after a brief delay
+        if (activeElement && (
+          activeElement.classList.contains('w-md-editor-text') ||
+          activeElement.closest('.w-md-editor')
+        )) {
+          setTimeout(() => {
+            const textarea = document.querySelector('.w-md-editor-text') as HTMLTextAreaElement
+            if (textarea) {
+              textarea.focus()
+            }
+          }, 100)
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleGlobalKeyDown)
+    return () => document.removeEventListener('keydown', handleGlobalKeyDown)
+  }, [keyStatus, isTranscribing, isRecording, mediaRecorder])
+
   // Start recording
   const startRecording = async () => {
     try {
@@ -217,8 +247,23 @@ export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
         response_format: "text",
       })
 
-      if (onTranscription && transcription) {
-        onTranscription(transcription)
+      console.log('Transcription response:', transcription, 'Type:', typeof transcription)
+
+      if (onTranscription && transcription && typeof transcription === 'string' && transcription.trim()) {
+        const trimmedTranscription = transcription.trim()
+        
+        // Use a timeout to ensure the transcription happens after any UI updates
+        setTimeout(() => {
+          onTranscription(trimmedTranscription)
+          
+          // Ensure focus is back on the editor after transcription
+          const textarea = document.querySelector('.w-md-editor-text') as HTMLTextAreaElement
+          if (textarea) {
+            textarea.focus()
+          }
+        }, 50)
+      } else {
+        console.warn('No valid transcription received:', transcription)
       }
 
       console.log('Transcription completed:', transcription)
@@ -263,7 +308,7 @@ export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
               ? 'Transcribing audio...' 
               : keyStatus !== 'valid' 
                 ? 'Please enter a valid API key first' 
-                : 'Click microphone to record, click arrow to expand'
+                : 'Click microphone to record (or press Ctrl+Enter/Cmd+Enter), click arrow to expand'
           }
         >
           <div className="microphone-section">

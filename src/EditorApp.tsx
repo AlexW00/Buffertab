@@ -150,28 +150,98 @@ function EditorApp() {
     }
   }
   const handleTranscription = useCallback((text: string) => {
+    // Validate input
+    if (!text || typeof text !== 'string') {
+      console.warn('Invalid transcription text received:', text)
+      return
+    }
+
+    // Helper function to determine if we need a space before the text
+    const needsSpace = (beforeText: string, afterText: string): boolean => {
+      if (!beforeText) return false
+      if (!afterText) {
+        // At the end - check if last character is whitespace
+        return !/\s$/.test(beforeText)
+      }
+      // In the middle - check if we need space on both sides
+      return !/\s$/.test(beforeText) && !/^\s/.test(afterText)
+    }
+
     // Try to insert text at cursor position by simulating typing
     // This will trigger the onChange handler with the new content
     const activeElement = document.activeElement
-    if (activeElement && activeElement.tagName === 'TEXTAREA') {
-      const textarea = activeElement as HTMLTextAreaElement
-      const start = textarea.selectionStart
-      const end = textarea.selectionEnd
-      const currentValue = textarea.value
-      
-      // Insert text at cursor position
-      const newValue = currentValue.slice(0, start) + text + currentValue.slice(end)
-      
-      // Update the textarea value and trigger change
-      textarea.value = newValue
-      textarea.setSelectionRange(start + text.length, start + text.length)
-      
-      // Trigger input event to update React state
-      const event = new Event('input', { bubbles: true })
-      textarea.dispatchEvent(event)
+    const textarea = document.querySelector('.w-md-editor-text') as HTMLTextAreaElement
+    
+    if (textarea && textarea instanceof HTMLTextAreaElement && (activeElement === textarea || activeElement?.closest('.w-md-editor'))) {
+      try {
+        // We have the textarea and focus is within the editor
+        const start = textarea.selectionStart || 0
+        const end = textarea.selectionEnd || 0
+        const currentValue = textarea.value || ''
+        
+        // Get text before and after cursor
+        const beforeCursor = currentValue.slice(0, start)
+        const afterCursor = currentValue.slice(end)
+        
+        // Determine if we need to add a space
+        const spacePrefix = needsSpace(beforeCursor, afterCursor) ? ' ' : ''
+        const textToInsert = spacePrefix + text
+        
+        // Insert text at cursor position
+        const newValue = beforeCursor + textToInsert + afterCursor
+        
+        // Update the textarea value and trigger change
+        textarea.value = newValue
+        
+        // Set cursor position after the inserted text
+        const newCursorPos = start + textToInsert.length
+        textarea.setSelectionRange(newCursorPos, newCursorPos)
+        
+        // Focus the textarea to ensure it's active
+        textarea.focus()
+        
+        // Trigger input event to update React state
+        const event = new Event('input', { bubbles: true })
+        textarea.dispatchEvent(event)
+      } catch (error) {
+        console.warn('Error setting cursor position:', error)
+        // Fallback to React state update
+        setMarkdownValue(prevValue => {
+          const currentValue = prevValue || ''
+          const spacePrefix = currentValue && !/\s$/.test(currentValue) ? ' ' : ''
+          return currentValue + spacePrefix + text
+        })
+      }
+    } else if (textarea && textarea instanceof HTMLTextAreaElement) {
+      try {
+        // Fallback: insert at the end of current content and focus
+        const currentValue = textarea.value || ''
+        const spacePrefix = currentValue && !/\s$/.test(currentValue) ? ' ' : ''
+        const newValue = currentValue + spacePrefix + text
+        
+        textarea.value = newValue
+        textarea.setSelectionRange(newValue.length, newValue.length)
+        textarea.focus()
+        
+        // Trigger input event to update React state
+        const event = new Event('input', { bubbles: true })
+        textarea.dispatchEvent(event)
+      } catch (error) {
+        console.warn('Error in fallback text insertion:', error)
+        // Final fallback to React state
+        setMarkdownValue(prevValue => {
+          const currentValue = prevValue || ''
+          const spacePrefix = currentValue && !/\s$/.test(currentValue) ? ' ' : ''
+          return currentValue + spacePrefix + text
+        })
+      }
     } else {
-      // Fallback: append to the end of the content
-      setMarkdownValue(prevValue => prevValue + text)
+      // Final fallback: use React state directly
+      setMarkdownValue(prevValue => {
+        const currentValue = prevValue || ''
+        const spacePrefix = currentValue && !/\s$/.test(currentValue) ? ' ' : ''
+        return currentValue + spacePrefix + text
+      })
     }
   }, [])
 

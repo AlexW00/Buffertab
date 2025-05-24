@@ -28,10 +28,10 @@ function EditorApp() {
     return () => mediaQuery.removeEventListener('change', handler)
   }, [])
 
-  // Keyboard shortcut handler for Ctrl+E to toggle preview mode
+  // Keyboard shortcut handler for Ctrl+E/Cmd+E to toggle preview mode
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key === 'e') {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
         e.preventDefault()
         setPreviewMode(prev => {
           switch (prev) {
@@ -263,7 +263,7 @@ function EditorApp() {
           <div className={`character-counter ${isLimitReached ? 'limit-reached' : ''}`}>
             <button 
               className="mode-section"
-              title="Press Ctrl+E (Cmd+E on Mac) to cycle through edit modes"
+              title="Press Ctrl+E or Cmd+E to cycle through edit modes"
               onClick={() => {
                 setPreviewMode(prev => {
                   switch (prev) {

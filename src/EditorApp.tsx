@@ -20,6 +20,7 @@ function EditorApp() {
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const hasUnsavedChangesRef = useRef(false)
   const lastSavedContentRef = useRef('')
+  const currentContentRef = useRef('')
 
   // Theme detection
   useEffect(() => {
@@ -131,8 +132,11 @@ function EditorApp() {
       clearTimeout(saveTimeoutRef.current)
     }
     
+    console.log('Setting up debounced save for 3 seconds...')
+    
     // Set new timeout
     saveTimeoutRef.current = setTimeout(() => {
+      console.log('Debounced save triggered, hasUnsavedChanges:', hasUnsavedChangesRef.current)
       if (hasUnsavedChangesRef.current) {
         saveToUrl(content)
       }
@@ -140,15 +144,19 @@ function EditorApp() {
   }, [saveToUrl])
 
   // Immediate save function (for blur/mouse events)
-  const saveImmediately = useCallback((content: string) => {
+  const saveImmediately = useCallback((content?: string) => {
     // Clear any pending debounced save
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current)
       saveTimeoutRef.current = null
     }
     
-    if (hasUnsavedChangesRef.current) {
-      saveToUrl(content)
+    // Use current content if not provided
+    const contentToSave = content ?? currentContentRef.current
+    
+    if (hasUnsavedChangesRef.current && contentToSave) {
+      console.log('Saving immediately:', contentToSave.slice(0, 50) + '...')
+      saveToUrl(contentToSave)
     }
   }, [saveToUrl])
 
@@ -159,6 +167,7 @@ function EditorApp() {
       decodeContent(hash).then(async (decodedContent) => {
         if (decodedContent) {
           setMarkdownValue(decodedContent)
+          currentContentRef.current = decodedContent
           lastSavedContentRef.current = decodedContent
           
           // Calculate and update usage percentage immediately after loading
@@ -177,16 +186,18 @@ function EditorApp() {
     let hasMouseMoved = false
     
     const handleBlur = () => {
+      console.log('Blur event triggered, hasUnsavedChanges:', hasUnsavedChangesRef.current)
       if (hasUnsavedChangesRef.current) {
-        saveImmediately(markdownValue)
+        saveImmediately()
       }
     }
     
     const handleMouseMove = () => {
       if (!hasMouseMoved) {
         hasMouseMoved = true
+        console.log('Mouse moved, hasUnsavedChanges:', hasUnsavedChangesRef.current)
         if (hasUnsavedChangesRef.current) {
-          saveImmediately(markdownValue)
+          saveImmediately()
         }
       }
     }
@@ -214,7 +225,7 @@ function EditorApp() {
       document.removeEventListener('mousemove', handleMouseMove)
       document.removeEventListener('focus', handleFocus, true)
     }
-  }, [markdownValue, saveImmediately])
+  }, [saveImmediately]) // Only depend on saveImmediately, not markdownValue
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -232,9 +243,13 @@ function EditorApp() {
     // Update UI immediately for responsive typing
     setMarkdownValue(content)
     
+    // Update current content ref
+    currentContentRef.current = content
+    
     // Track that we have unsaved changes
     if (content !== lastSavedContentRef.current) {
       hasUnsavedChangesRef.current = true
+      console.log('Content changed, setting unsaved flag. New content length:', content.length)
       
       // Update usage percentage immediately for feedback
       const encoded = await encodeContent(content)

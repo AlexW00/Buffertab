@@ -20,18 +20,6 @@ export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Load API key from localStorage on mount
-  useEffect(() => {
-    const savedKey = localStorage.getItem(STORAGE_KEY)
-    if (savedKey) {
-      setApiKey(savedKey)
-      // Validate the saved key
-      if (savedKey.length === OPENAI_API_KEY_LENGTH) {
-        validateApiKey(savedKey)
-      }
-    }
-  }, [])
-
   // Validate API key when it reaches the required length
   const validateApiKey = useCallback(async (key: string) => {
     if (key.length !== OPENAI_API_KEY_LENGTH) return
@@ -55,6 +43,20 @@ export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
       localStorage.removeItem(STORAGE_KEY)
     }
   }, [])
+
+  // Load API key from localStorage on mount
+  useEffect(() => {
+    const savedKey = localStorage.getItem(STORAGE_KEY)
+    if (savedKey) {
+      setApiKey(savedKey)
+      // Validate the saved key
+      if (savedKey.length === OPENAI_API_KEY_LENGTH) {
+        // Set status to validating immediately to prevent premature "enter key" message
+        setKeyStatus('validating')
+        validateApiKey(savedKey)
+      }
+    }
+  }, [validateApiKey])
 
   // Handle API key input change
   const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -201,6 +203,16 @@ export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
 
   // Handle microphone button click
   const handleMicrophoneClick = () => {
+    if (keyStatus === 'idle' || keyStatus === 'invalid') {
+      alert('Please enter a valid OpenAI API key first.')
+      return
+    }
+
+    if (keyStatus === 'validating') {
+      alert('API key is being validated, please wait a moment...')
+      return
+    }
+
     if (keyStatus !== 'valid') {
       alert('Please enter a valid OpenAI API key first.')
       return

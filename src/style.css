@@ -140,7 +140,25 @@ body {
   box-sizing: border-box !important;
 }
 
-/* Theme support for React MD Editor */
+/* React MD Editor preview styles */
+.w-md-editor-preview {
+  height: 100% !important;
+  padding: 20px !important;
+  border: none !important;
+  background: transparent !important;
+  overflow-y: auto !important;
+  font-family: 'JetBrains Mono', monospace !important;
+}
+
+[data-color-mode="light"] .w-md-editor-preview {
+  background-color: var(--card-bg-light) !important;
+  color: var(--text-light) !important;
+}
+
+[data-color-mode="dark"] .w-md-editor-preview {
+  background-color: var(--card-bg-dark) !important;
+  color: var(--text-dark) !important;
+}
 [data-color-mode="light"] .w-md-editor {
   background-color: var(--card-bg-light) !important;
   color: var(--text-light) !important;
@@ -163,27 +181,28 @@ body {
 
 /* Character counter */
 .character-counter {
+  display: flex;
+  align-items: center;
+  height: auto;
+  border-radius: 6px;
+  border: 1px solid var(--border-light);
+  background: var(--card-bg-light);
+  color: var(--text-light);
+  transition: all 0.2s ease;
+  outline: none;
+  padding: 0;
+  overflow: hidden;
   font-size: 12px;
   font-family: 'JetBrains Mono', monospace;
   font-weight: 500;
-  padding: 6px 12px;
-  border-radius: 6px;
-  transition: all 0.3s ease;
-  pointer-events: none;
   line-height: 1.5;
   box-sizing: border-box;
 }
 
-.app.light .character-counter {
-  color: var(--counter-text-light);
-  background-color: rgba(247, 250, 252, 0.9);
-  border: 1px solid var(--border-light);
-}
-
 .app.dark .character-counter {
-  color: var(--counter-text-dark);
-  background-color: rgba(0, 0, 0, 0.9);
-  border: 1px solid var(--border-dark);
+  border-color: var(--border-dark);
+  background: var(--card-bg-dark);
+  color: var(--text-dark);
 }
 
 .character-counter.limit-reached {
@@ -195,6 +214,59 @@ body {
 .app.dark .character-counter.limit-reached {
   background-color: rgba(69, 26, 26, 0.9) !important;
   border-color: #c53030 !important;
+}
+
+.mode-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: none;
+  border-right: 1px solid var(--border-light);
+  background: transparent;
+  color: inherit;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.app.dark .mode-section {
+  border-right-color: var(--border-dark);
+}
+
+.mode-section:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.character-counter.limit-reached .mode-section {
+  border-right-color: #feb2b2;
+}
+
+.app.dark .character-counter.limit-reached .mode-section {
+  border-right-color: #c53030;
+}
+
+.usage-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  opacity: 0.6;
+  color: var(--counter-text-light);
+  pointer-events: none;
+}
+
+.app.dark .usage-section {
+  color: var(--counter-text-dark);
+}
+
+.character-counter.limit-reached .usage-section {
+  opacity: 0.8;
+  color: #e53e3e;
 }
 
 /* Voice Recorder Styles */

@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import MDEditor from '@uiw/react-md-editor'
 import '@uiw/react-md-editor/markdown-editor.css'
 import '@uiw/react-markdown-preview/markdown.css'
+import { Edit3, Split, Eye } from 'lucide-react'
 import VoiceRecorder from './VoiceRecorder'
 
 const MAX_URL_LENGTH = 2048 // Safe URL length limit
@@ -12,6 +13,7 @@ function EditorApp() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
   const [isLimitReached, setIsLimitReached] = useState(false)
   const [markdownValue, setMarkdownValue] = useState('')
+  const [previewMode, setPreviewMode] = useState<'edit' | 'live' | 'view'>('edit')
 
   // Theme detection
   useEffect(() => {
@@ -24,6 +26,30 @@ function EditorApp() {
     
     mediaQuery.addEventListener('change', handler)
     return () => mediaQuery.removeEventListener('change', handler)
+  }, [])
+
+  // Keyboard shortcut handler for Ctrl+E to toggle preview mode
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === 'e') {
+        e.preventDefault()
+        setPreviewMode(prev => {
+          switch (prev) {
+            case 'edit':
+              return 'live'
+            case 'live':
+              return 'view'
+            case 'view':
+              return 'edit'
+            default:
+              return 'edit'
+          }
+        })
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
   }, [])
 
   // Unicode-safe base64 encoding with compression for URL
@@ -104,7 +130,25 @@ function EditorApp() {
     }
   }, [encodeContent])
 
-  // Handle voice transcription
+  // Map our internal mode to MDEditor's expected preview type
+  const getMDEditorPreviewMode = (mode: 'edit' | 'live' | 'view'): 'edit' | 'live' | 'preview' => {
+    if (mode === 'view') return 'preview'
+    return mode
+  }
+
+  // Get icon for current mode
+  const getModeIcon = (mode: 'edit' | 'live' | 'view') => {
+    switch (mode) {
+      case 'edit':
+        return <Edit3 size={14} />
+      case 'live':
+        return <Split size={14} />
+      case 'view':
+        return <Eye size={14} />
+      default:
+        return <Edit3 size={14} />
+    }
+  }
   const handleTranscription = useCallback((text: string) => {
     // Try to insert text at cursor position by simulating typing
     // This will trigger the onChange handler with the new content
@@ -141,13 +185,35 @@ function EditorApp() {
             data-color-mode={theme}
             visibleDragbar={false}
             hideToolbar
-            preview="edit"
+            preview={getMDEditorPreviewMode(previewMode)}
           />
         </div>
         <div className="editor-controls">
           <VoiceRecorder onTranscription={handleTranscription} />
           <div className={`character-counter ${isLimitReached ? 'limit-reached' : ''}`}>
-            {usagePercentage}% used
+            <button 
+              className="mode-section"
+              onClick={() => {
+                setPreviewMode(prev => {
+                  switch (prev) {
+                    case 'edit':
+                      return 'live'
+                    case 'live':
+                      return 'view'
+                    case 'view':
+                      return 'edit'
+                    default:
+                      return 'edit'
+                  }
+                })
+              }}
+            >
+              {getModeIcon(previewMode)}
+              {previewMode}
+            </button>
+            <span className="usage-section">
+              {usagePercentage}% used
+            </span>
           </div>
         </div>
       </div>

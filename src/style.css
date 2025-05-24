@@ -29,6 +29,10 @@ html, body {
   height: 100%;
   font-family: 'JetBrains Mono', monospace;
   line-height: 1.5;
+  /* Prevent iOS Safari zoom on input focus */
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body .w-md-editor-text-input {
@@ -119,6 +123,11 @@ body {
   resize: none !important;
   box-sizing: border-box !important;
   line-height: 1.5 !important;
+  /* Additional iOS zoom prevention */
+  -webkit-text-size-adjust: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .w-md-editor-text:focus {

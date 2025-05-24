@@ -209,7 +209,7 @@ export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
     }
 
     if (keyStatus === 'validating') {
-      alert('API key is being validated, please wait a moment...')
+      alert('API key is being validated, please try again in a second...')
       return
     }
 

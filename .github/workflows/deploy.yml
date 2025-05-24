@@ -1,0 +1,41 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "README.md"
+      - "*.md"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout 📦
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for .gitattributes check
+
+      - name: Set up Node.js environment 🌱
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x" # Or your preferred Node.js version
+
+      - name: Install dependencies ⚙️
+        run: npm ci # Use npm ci for clean install in CI environments
+
+      - name: Build project 🏗️
+        run: npm run build # Your build command
+
+      - name: Deploy to GitHub Pages 🚀
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages # The branch to deploy to
+          user_name: github-actions[bot]
+          user_email: github-actions@github.com

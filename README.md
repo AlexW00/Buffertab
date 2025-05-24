@@ -2,6 +2,8 @@
 
 A minimal markdown editor that lives in your browser's URL.
 
+![image](https://github.com/user-attachments/assets/9fefdcf3-6611-4b24-988c-f52ef389b471)
+
 ## Features
 
 - **🔗 URL-based storage** - The buffer content is compressed and stored in the URL hash

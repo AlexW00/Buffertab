@@ -8,6 +8,7 @@ import VoiceRecorder from './VoiceRecorder'
 
 const MAX_URL_LENGTH = 2048 // Safe URL length limit
 const SAVE_DELAY = 1000 // 1 second delay after typing stops
+const TITLE_PREVIEW_LENGTH = 50 // Number of characters to show in browser tab title
 
 function EditorApp() {
   const [usagePercentage, setUsagePercentage] = useState(0)
@@ -57,6 +58,26 @@ function EditorApp() {
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  // Update browser tab title based on content
+  const updatePageTitle = useCallback((content: string) => {
+    if (!content.trim()) {
+      document.title = 'BufferTab'
+      return
+    }
+    
+    // Remove markdown formatting and get clean text preview
+    const cleanText = content
+      .replace(/[#*_`~\[\]]/g, '') // Remove common markdown characters
+      .replace(/\n+/g, ' ') // Replace newlines with spaces
+      .trim()
+    
+    const preview = cleanText.length > TITLE_PREVIEW_LENGTH 
+      ? cleanText.substring(0, TITLE_PREVIEW_LENGTH) + '...'
+      : cleanText
+    
+    document.title = `BufferTab | ${preview}`
   }, [])
 
   // Unicode-safe base64 encoding with compression for URL
@@ -120,11 +141,14 @@ function EditorApp() {
       }
       lastSavedContentRef.current = content
       hasUnsavedChangesRef.current = false
+      
+      // Update browser tab title only after successful save
+      updatePageTitle(content)
     } else {
       // If over limit, mark as reached but don't save
       setIsLimitReached(true)
     }
-  }, [encodeContent])
+  }, [encodeContent, updatePageTitle])
 
   // Debounced save function
   const debouncedSave = useCallback((content: string) => {
@@ -171,6 +195,9 @@ function EditorApp() {
           currentContentRef.current = decodedContent
           lastSavedContentRef.current = decodedContent
           
+          // Update browser tab title
+          updatePageTitle(decodedContent)
+          
           // Calculate and update usage percentage immediately after loading
           const encoded = await encodeContent(decodedContent)
           const urlLength = encoded.length + 1
@@ -179,8 +206,11 @@ function EditorApp() {
           setIsLimitReached(urlLength > MAX_URL_LENGTH)
         }
       })
+    } else {
+      // Set default title when no content
+      updatePageTitle('')
     }
-  }, [decodeContent, encodeContent])
+  }, [decodeContent, encodeContent, updatePageTitle])
 
   // Handle browser back/forward navigation
   useEffect(() => {
@@ -193,6 +223,9 @@ function EditorApp() {
             currentContentRef.current = decodedContent
             lastSavedContentRef.current = decodedContent
             hasUnsavedChangesRef.current = false
+            
+            // Update browser tab title
+            updatePageTitle(decodedContent)
             
             // Calculate and update usage percentage
             const encoded = await encodeContent(decodedContent)
@@ -210,12 +243,15 @@ function EditorApp() {
         hasUnsavedChangesRef.current = false
         setUsagePercentage(0)
         setIsLimitReached(false)
+        
+        // Update browser tab title
+        updatePageTitle('')
       }
     }
 
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [decodeContent, encodeContent])
+  }, [decodeContent, encodeContent, updatePageTitle])
 
   // Add event listeners for immediate saving on blur and mouse movement
   useEffect(() => {

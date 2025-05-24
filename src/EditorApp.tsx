@@ -7,7 +7,7 @@ import { Edit3, Split, Eye } from 'lucide-react'
 import VoiceRecorder from './VoiceRecorder'
 
 const MAX_URL_LENGTH = 2048 // Safe URL length limit
-const SAVE_DELAY = 2000 // 2 seconds delay after typing stops
+const SAVE_DELAY = 1000 // 1 second delay after typing stops
 
 function EditorApp() {
   const [usagePercentage, setUsagePercentage] = useState(0)

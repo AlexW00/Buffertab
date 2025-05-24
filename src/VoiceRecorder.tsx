@@ -4,12 +4,13 @@ import OpenAI from 'openai'
 
 interface VoiceRecorderProps {
   onTranscription?: (text: string) => void
+  onRecordingStart?: () => void
 }
 
 const OPENAI_API_KEY_LENGTH = 51 // OpenAI API keys are 51 characters long
 const STORAGE_KEY = 'buffertab-openai-api-key'
 
-export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
+export default function VoiceRecorder({ onTranscription, onRecordingStart }: VoiceRecorderProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [apiKey, setApiKey] = useState('')
   const [keyStatus, setKeyStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle')
@@ -152,6 +153,11 @@ export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
   // Start recording
   const startRecording = async () => {
     try {
+      // Call the parent callback to trigger save before recording
+      if (onRecordingStart) {
+        onRecordingStart()
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       
       // Get the best supported audio format

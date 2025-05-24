@@ -115,7 +115,8 @@ function EditorApp() {
     if (remaining >= 0) {
       // Update URL hash only if it's different
       if (window.location.hash.slice(1) !== encoded) {
-        window.history.replaceState(null, '', `#${encoded}`)
+        // Use pushState to add to navigation stack instead of replaceState
+        window.history.pushState(null, '', `#${encoded}`)
       }
       lastSavedContentRef.current = content
       hasUnsavedChangesRef.current = false
@@ -179,6 +180,41 @@ function EditorApp() {
         }
       })
     }
+  }, [decodeContent, encodeContent])
+
+  // Handle browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const hash = window.location.hash.slice(1)
+      if (hash) {
+        decodeContent(hash).then(async (decodedContent) => {
+          if (decodedContent) {
+            setMarkdownValue(decodedContent)
+            currentContentRef.current = decodedContent
+            lastSavedContentRef.current = decodedContent
+            hasUnsavedChangesRef.current = false
+            
+            // Calculate and update usage percentage
+            const encoded = await encodeContent(decodedContent)
+            const urlLength = encoded.length + 1
+            const percentage = Math.round((urlLength / MAX_URL_LENGTH) * 100)
+            setUsagePercentage(percentage)
+            setIsLimitReached(urlLength > MAX_URL_LENGTH)
+          }
+        })
+      } else {
+        // If no hash, reset to empty content
+        setMarkdownValue('')
+        currentContentRef.current = ''
+        lastSavedContentRef.current = ''
+        hasUnsavedChangesRef.current = false
+        setUsagePercentage(0)
+        setIsLimitReached(false)
+      }
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
   }, [decodeContent, encodeContent])
 
   // Add event listeners for immediate saving on blur and mouse movement

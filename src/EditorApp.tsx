@@ -285,19 +285,14 @@ function EditorApp() {
       return !/\s$/.test(beforeText) && !/^\s/.test(afterText)
     }
 
-    const textarea = document.querySelector('.w-md-editor-text') as HTMLTextAreaElement
+    // Try to insert text at cursor position by simulating typing
+    // This will trigger the onChange handler with the new content
     const activeElement = document.activeElement
+    const textarea = document.querySelector('.w-md-editor-text') as HTMLTextAreaElement
     
-    // Check if we can detect cursor position (editor has focus)
-    const hasEditorFocus = activeElement === textarea || activeElement?.closest('.w-md-editor')
-    const canDetectCursor = textarea && textarea instanceof HTMLTextAreaElement && 
-                           hasEditorFocus && 
-                           typeof textarea.selectionStart === 'number' && 
-                           typeof textarea.selectionEnd === 'number'
-
-    if (canDetectCursor) {
+    if (textarea && textarea instanceof HTMLTextAreaElement && (activeElement === textarea || activeElement?.closest('.w-md-editor'))) {
       try {
-        // We can detect cursor position - insert at cursor
+        // We have the textarea and focus is within the editor
         const start = textarea.selectionStart || 0
         const end = textarea.selectionEnd || 0
         const currentValue = textarea.value || ''
@@ -313,30 +308,31 @@ function EditorApp() {
         // Insert text at cursor position
         const newValue = beforeCursor + textToInsert + afterCursor
         
-        // Update through DOM and trigger React update
+        // Update the textarea value and trigger change
         textarea.value = newValue
+        
+        // Set cursor position after the inserted text
         const newCursorPos = start + textToInsert.length
         textarea.setSelectionRange(newCursorPos, newCursorPos)
+        
+        // Focus the textarea to ensure it's active
         textarea.focus()
         
         // Trigger input event to update React state
         const event = new Event('input', { bubbles: true })
         textarea.dispatchEvent(event)
-        
-        return // Success - exit early
       } catch (error) {
-        console.warn('Error inserting at cursor position:', error)
-        // Fall through to append-at-end logic
+        console.warn('Error setting cursor position:', error)
+        // Fallback to React state update
+        setMarkdownValue(prevValue => {
+          const currentValue = prevValue || ''
+          const spacePrefix = currentValue && !/\s$/.test(currentValue) ? ' ' : ''
+          return currentValue + spacePrefix + text
+        })
       }
-    }
-
-    // Fallback: No cursor detected or error occurred - append at end
-    // This handles mobile devices, unfocused editor, or any DOM manipulation errors
-    console.log('No cursor position detected, appending text at end')
-    
-    if (textarea && textarea instanceof HTMLTextAreaElement) {
+    } else if (textarea && textarea instanceof HTMLTextAreaElement) {
       try {
-        // Try DOM manipulation first for immediate feedback
+        // Fallback: insert at the end of current content and focus
         const currentValue = textarea.value || ''
         const spacePrefix = currentValue && !/\s$/.test(currentValue) ? ' ' : ''
         const newValue = currentValue + spacePrefix + text
@@ -349,8 +345,8 @@ function EditorApp() {
         const event = new Event('input', { bubbles: true })
         textarea.dispatchEvent(event)
       } catch (error) {
-        console.warn('Error with DOM manipulation, using React state:', error)
-        // Use React state as final fallback
+        console.warn('Error in fallback text insertion:', error)
+        // Final fallback to React state
         setMarkdownValue(prevValue => {
           const currentValue = prevValue || ''
           const spacePrefix = currentValue && !/\s$/.test(currentValue) ? ' ' : ''
@@ -358,8 +354,7 @@ function EditorApp() {
         })
       }
     } else {
-      // No textarea found - use React state directly
-      console.log('No textarea found, using React state update')
+      // Final fallback: use React state directly
       setMarkdownValue(prevValue => {
         const currentValue = prevValue || ''
         const spacePrefix = currentValue && !/\s$/.test(currentValue) ? ' ' : ''

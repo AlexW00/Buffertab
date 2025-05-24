@@ -2,7 +2,7 @@
 
 Minimal markdown editor that lives in your browser's URL ➜ [check it out](https://alexw00.github.io/Buffertab)
 
-![image](https://github.com/user-attachments/assets/9fefdcf3-6611-4b24-988c-f52ef389b471)
+![image](https://github.com/user-attachments/assets/09a14873-4b21-4a7d-bbc0-3060e97e5bea)
 
 ## Features
 

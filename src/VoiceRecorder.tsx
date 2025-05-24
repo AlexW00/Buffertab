@@ -269,7 +269,7 @@ export default function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
       console.log('Transcription completed:', transcription)
     } catch (error) {
       console.error('Transcription error:', error)
-      alert('Failed to transcribe audio. Please check your API key and try again.')
+      alert(`Error during transcription: ${error}`)
     } finally {
       setIsTranscribing(false)
     }

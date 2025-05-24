@@ -11,12 +11,12 @@
   --shadow-light: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   
   /* Dark theme colors */
-  --bg-dark: #1a202c;
-  --card-bg-dark: #2d3748;
-  --text-dark: #f7fafc;
-  --counter-text-dark: #a0aec0;
-  --border-dark: #4a5568;
-  --shadow-dark: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  --bg-dark: #000000;
+  --card-bg-dark: #1a1a1a;
+  --text-dark: #ffffff;
+  --counter-text-dark: #cccccc;
+  --border-dark: #333333;
+  --shadow-dark: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
 }
 
 * {
@@ -182,7 +182,7 @@ body {
 
 .app.dark .character-counter {
   color: var(--counter-text-dark);
-  background-color: rgba(26, 32, 44, 0.9);
+  background-color: rgba(0, 0, 0, 0.9);
   border: 1px solid var(--border-dark);
 }
 

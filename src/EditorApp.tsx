@@ -193,6 +193,7 @@ function EditorApp() {
           <div className={`character-counter ${isLimitReached ? 'limit-reached' : ''}`}>
             <button 
               className="mode-section"
+              title="Press Ctrl+E (Cmd+E on Mac) to cycle through edit modes"
               onClick={() => {
                 setPreviewMode(prev => {
                   switch (prev) {

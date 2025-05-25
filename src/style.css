@@ -39,6 +39,17 @@ html, body {
   user-select: none;
 }
 
+/* iOS Safari viewport fix */
+@supports (-webkit-touch-callout: none) {
+  html {
+    height: -webkit-fill-available;
+  }
+  
+  body {
+    min-height: -webkit-fill-available;
+  }
+}
+
 body .w-md-editor-text-input {
   font-family: 'JetBrains Mono', monospace;
 }
@@ -48,26 +59,20 @@ body {
 }
 
 #app {
-  /* Use dynamic viewport units for better mobile support */
   height: 100dvh;
   width: 100dvw;
-  /* Fallback for older browsers */
-  height: 100vh;
+  /* iOS Safari fallback */
+  height: -webkit-fill-available;
   width: 100vw;
   overflow: hidden;
-  /* Support CSS safe areas - only apply to content container */
   box-sizing: border-box;
 }
 
 .app {
-  /* Use dynamic viewport units for better mobile support */
-  height: 100dvh;
-  width: 100dvw;
-  /* Fallback for older browsers */
-  height: 100vh;
-  width: 100vw;
+  height: 100%;
+  width: 100%;
   padding: 8px;
-  /* Apply safe areas here instead of on #app */
+  /* Apply safe areas */
   padding-top: max(8px, env(safe-area-inset-top, 8px));
   padding-bottom: max(8px, env(safe-area-inset-bottom, 8px));
   padding-left: max(8px, env(safe-area-inset-left, 8px));
@@ -521,22 +526,6 @@ body {
   transition: bottom 0.3s ease;
 }
 
-/* iOS Safari specific viewport fixes */
-@supports (height: 100dvh) {
-  .editor-controls {
-    /* Use dynamic viewport units when available - better iOS Safari support */
-    bottom: 12px;
-  }
-}
-
-/* Specific fix for iOS Safari address bar behavior */
-@supports (-webkit-touch-callout: none) {
-  .editor-controls {
-    /* iOS-specific positioning - no additional safe area needed since .app handles it */
-    bottom: 12px;
-  }
-}
-
 /* Additional mobile-specific adjustments */
 @media (max-width: 768px) {
   .editor-controls {
@@ -551,26 +540,6 @@ body {
       /* More conservative positioning when height is constrained */
       bottom: 16px;
     }
-  }
-}
-
-/* Specific iOS Safari fixes for viewport and safe areas */
-@supports (-webkit-appearance: none) and (not (contain: paint)) {
-  /* This targets iOS Safari more specifically */
-  html {
-    /* Ensure full height on iOS Safari */
-    height: -webkit-fill-available;
-  }
-  
-  body {
-    /* Use webkit fill available for better iOS Safari support */
-    min-height: -webkit-fill-available;
-  }
-  
-  #app {
-    /* Better iOS Safari viewport handling */
-    min-height: -webkit-fill-available;
-    height: -webkit-fill-available;
   }
 }
 

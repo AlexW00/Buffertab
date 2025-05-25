@@ -47,6 +47,7 @@ html, body {
   
   body {
     min-height: -webkit-fill-available;
+    height: -webkit-fill-available;
   }
 }
 
@@ -59,13 +60,23 @@ body {
 }
 
 #app {
+  /* Use 100dvh primarily, with vh fallback for older browsers */
+  height: 100vh;
   height: 100dvh;
-  width: 100dvw;
-  /* iOS Safari fallback */
-  height: -webkit-fill-available;
   width: 100vw;
+  width: 100dvw;
   overflow: hidden;
   box-sizing: border-box;
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+  #app {
+    /* For iOS Safari, use -webkit-fill-available as primary with dvh fallback */
+    height: -webkit-fill-available;
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
+  }
 }
 
 .app {

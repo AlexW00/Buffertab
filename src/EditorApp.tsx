@@ -8,6 +8,7 @@ import VoiceRecorder from './VoiceRecorder'
 const MAX_URL_LENGTH = 2048 // Safe URL length limit
 const SAVE_DELAY = 1000 // 1 second delay after typing stops
 const TITLE_PREVIEW_LENGTH = 50 // Number of characters to show in browser tab title
+const DESCRIPTION_LENGTH = 160 // SEO-friendly description length
 
 function EditorApp() {
   const [usagePercentage, setUsagePercentage] = useState(0)
@@ -109,27 +110,82 @@ function EditorApp() {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  // Update browser tab title based on content
-  const updatePageTitle = useCallback((content: string) => {
-    // Get the first line only
+  // Utility function to update all page metadata
+  const updatePageMetadata = useCallback((content: string) => {
+    // Get the first line only for title
     const firstLine = content.split('\n')[0].trim()
     
-    if (!firstLine) {
-      document.title = 'BufferTab'
-      return
-    }
-    
-    // Remove markdown formatting and get clean text preview
+    // Create clean text without markdown formatting
     const cleanText = firstLine
       .replace(/[#*_`~\[\]]/g, '') // Remove common markdown characters
       .trim()
     
-    const preview = cleanText.length > TITLE_PREVIEW_LENGTH 
-      ? cleanText.substring(0, TITLE_PREVIEW_LENGTH) + '...'
-      : cleanText
+    // Update document title
+    if (!cleanText) {
+      document.title = 'BufferTab'
+    } else {
+      const titlePreview = cleanText.length > TITLE_PREVIEW_LENGTH 
+        ? cleanText.substring(0, TITLE_PREVIEW_LENGTH) + '...'
+        : cleanText
+      document.title = `BufferTab | ${titlePreview}`
+    }
     
-    document.title = `BufferTab | ${preview}`
+    // Create description from content (first few lines, cleaned)
+    const contentLines = content.split('\n').slice(0, 3).join(' ').trim()
+    const cleanDescription = contentLines
+      .replace(/[#*_`~\[\]]/g, '') // Remove markdown formatting
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .trim()
+    
+    const description = cleanDescription 
+      ? (cleanDescription.length > DESCRIPTION_LENGTH 
+          ? cleanDescription.substring(0, DESCRIPTION_LENGTH) + '...'
+          : cleanDescription)
+      : 'Minimal markdown editor that lives in your browser\'s URL'
+    
+    // Update or create meta tags
+    const updateMetaTag = (name: string, content: string, property?: string) => {
+      const selector = property ? `meta[property="${name}"]` : `meta[name="${name}"]`
+      let metaTag = document.querySelector(selector) as HTMLMetaElement
+      
+      if (!metaTag) {
+        metaTag = document.createElement('meta')
+        if (property) {
+          metaTag.setAttribute('property', name)
+        } else {
+          metaTag.setAttribute('name', name)
+        }
+        document.head.appendChild(metaTag)
+      }
+      
+      metaTag.setAttribute('content', content)
+    }
+    
+    // Basic meta tags
+    updateMetaTag('description', description)
+    updateMetaTag('author', 'BufferTab')
+    
+    // Open Graph tags
+    updateMetaTag('og:title', document.title, 'property')
+    updateMetaTag('og:description', description, 'property')
+    updateMetaTag('og:type', 'website', 'property')
+    updateMetaTag('og:url', window.location.href, 'property')
+    updateMetaTag('og:site_name', 'BufferTab', 'property')
+    
+    // Twitter Card tags
+    updateMetaTag('twitter:card', 'summary')
+    updateMetaTag('twitter:title', document.title)
+    updateMetaTag('twitter:description', description)
+    
+    // Additional meta tags for better SEO
+    updateMetaTag('keywords', 'markdown, editor, notes, writing, text editor, online editor')
+    updateMetaTag('robots', 'index, follow')
   }, [])
+
+  // Update browser tab title based on content (keeping for backwards compatibility)
+  const updatePageTitle = useCallback((content: string) => {
+    updatePageMetadata(content)
+  }, [updatePageMetadata])
 
   // Unicode-safe base64 encoding with compression for URL
   const encodeContent = useCallback(async (text: string, mode: 'edit' | 'live' | 'view' = 'edit'): Promise<string> => {

@@ -260,7 +260,7 @@ function EditorApp() {
       clearTimeout(saveTimeoutRef.current)
     }
     
-    console.log('Setting up debounced save for 1 seconds...')
+    console.log('Setting up debounced save for 3 seconds...')
     
     // Set new timeout
     saveTimeoutRef.current = setTimeout(() => {
@@ -489,6 +489,43 @@ function EditorApp() {
       saveToUrlWithMode(currentContentRef.current, previewMode)
     }
   }, [previewMode, saveToUrlWithMode])
+
+  // iOS detection for enhanced mobile handling
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+
+  // Enhanced viewport handling for iOS Safari
+  useEffect(() => {
+    if (!isIOS) return
+
+    const handleIOSViewportChange = () => {
+      // Force a reflow to handle iOS Safari address bar changes
+      const appElement = document.querySelector('#app') as HTMLElement
+      if (appElement) {
+        // Temporarily set height to auto to force recalculation
+        appElement.style.height = 'auto'
+        // Force reflow
+        appElement.offsetHeight
+        // Reset to viewport height
+        appElement.style.height = '100dvh'
+        if (!window.CSS?.supports('height: 100dvh')) {
+          appElement.style.height = '100vh'
+        }
+      }
+    }
+
+    // Listen for orientation changes and resize events specific to iOS
+    window.addEventListener('orientationchange', handleIOSViewportChange)
+    window.addEventListener('resize', handleIOSViewportChange)
+    
+    // Initial setup
+    handleIOSViewportChange()
+
+    return () => {
+      window.removeEventListener('orientationchange', handleIOSViewportChange)
+      window.removeEventListener('resize', handleIOSViewportChange)
+    }
+  }, [isIOS])
 
   return (
     <div className={`app ${theme}`} data-color-mode={theme}>

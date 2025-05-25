@@ -62,15 +62,17 @@ function EditorApp() {
 
   // Update browser tab title based on content
   const updatePageTitle = useCallback((content: string) => {
-    if (!content.trim()) {
+    // Get the first line only
+    const firstLine = content.split('\n')[0].trim()
+    
+    if (!firstLine) {
       document.title = 'BufferTab'
       return
     }
     
     // Remove markdown formatting and get clean text preview
-    const cleanText = content
+    const cleanText = firstLine
       .replace(/[#*_`~\[\]]/g, '') // Remove common markdown characters
-      .replace(/\n+/g, ' ') // Replace newlines with spaces
       .trim()
     
     const preview = cleanText.length > TITLE_PREVIEW_LENGTH 

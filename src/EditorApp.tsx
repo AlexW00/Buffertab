@@ -22,6 +22,50 @@ function EditorApp() {
   const lastSavedContentRef = useRef('')
   const currentContentRef = useRef('')
   const lastSavedModeRef = useRef<'edit' | 'live' | 'view'>('edit')
+  const editorControlsRef = useRef<HTMLDivElement>(null)
+
+  // Virtual keyboard detection using Visual Viewport API
+  useEffect(() => {
+    if (!window.visualViewport) return
+
+    const handleViewportChange = () => {
+      const viewport = window.visualViewport!
+      const windowHeight = window.innerHeight
+      const viewportHeight = viewport.height
+      
+      // Detect if virtual keyboard is likely open
+      // A significant reduction in viewport height indicates keyboard presence
+      const heightDifference = windowHeight - viewportHeight
+      const isKeyboardOpen = heightDifference > 150 // Threshold for keyboard detection
+      
+      // Dynamically adjust the position of editor controls
+      if (editorControlsRef.current) {
+        if (isKeyboardOpen) {
+          // Position controls above the keyboard
+          const keyboardHeight = heightDifference
+          const safeOffset = 12 // Base offset from viewport edge
+          editorControlsRef.current.style.bottom = `${keyboardHeight + safeOffset}px`
+        } else {
+          // Reset to default position
+          editorControlsRef.current.style.bottom = '12px'
+        }
+      }
+    }
+
+    // Listen for viewport changes
+    window.visualViewport.addEventListener('resize', handleViewportChange)
+    window.visualViewport.addEventListener('scroll', handleViewportChange)
+    
+    // Initial check
+    handleViewportChange()
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleViewportChange)
+        window.visualViewport.removeEventListener('scroll', handleViewportChange)
+      }
+    }
+  }, [])
 
   // Theme detection
   useEffect(() => {
@@ -458,7 +502,7 @@ function EditorApp() {
             preview={getMDEditorPreviewMode(previewMode)}
           />
         </div>
-        <div className="editor-controls">
+        <div className="editor-controls" ref={editorControlsRef}>
           <VoiceRecorder onTranscription={handleTranscription} onRecordingStart={triggerImmediateSave} />
           <div className={`character-counter ${isLimitReached ? 'limit-reached' : ''}`}>
             <button 

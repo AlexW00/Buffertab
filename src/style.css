@@ -489,6 +489,34 @@ body {
   align-items: center;
   gap: 12px;
   z-index: 100;
+  transition: bottom 0.3s ease;
+  /* Ensure safe area for mobile devices */
+  bottom: max(12px, env(safe-area-inset-bottom, 12px));
+}
+
+/* Mobile keyboard detection and adjustment */
+@supports (height: 100dvh) {
+  .editor-controls {
+    /* Use dynamic viewport units when available */
+    bottom: max(12px, calc(100vh - 100dvh + 12px));
+  }
+}
+
+/* Additional mobile-specific adjustments */
+@media (max-width: 768px) {
+  .editor-controls {
+    /* Adjust position for mobile devices */
+    bottom: max(12px, env(safe-area-inset-bottom, 12px));
+    gap: 8px; /* Smaller gap on mobile */
+  }
+  
+  /* When viewport height is small (likely keyboard is open) */
+  @media (max-height: 600px) {
+    .editor-controls {
+      /* More conservative positioning when height is constrained */
+      bottom: max(16px, calc(env(keyboard-inset-height, 0px) + 16px));
+    }
+  }
 }
 
 /* Responsive design */
@@ -500,10 +528,41 @@ body {
     height: auto !important;
   }
   
+  .w-md-editor-preview {
+    padding: 1rem !important;
+    padding-bottom: 7rem !important; /* Same padding for preview mode */
+  }
+  
   .character-counter {
-    bottom: 8px;
-    right: 12px;
     font-size: 11px;
-    padding: 4px 8px;
+    height: 28px; /* Slightly smaller on mobile */
+  }
+  
+  .mode-section {
+    padding: 6px 10px; /* Adjusted for smaller height */
+    font-size: 11px;
+  }
+  
+  .usage-section {
+    padding: 6px 10px; /* Adjusted for smaller height */
+  }
+  
+  .combined-button {
+    height: 28px; /* Match character counter height */
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+}
+
+/* Additional styles for very small screens or when keyboard is open */
+@media (max-width: 768px) and (max-height: 600px) {
+  .w-md-editor-text {
+    /* Increase bottom padding when keyboard might be open */
+    padding-bottom: 9rem !important;
+  }
+  
+  .w-md-editor-preview {
+    /* Increase bottom padding when keyboard might be open */
+    padding-bottom: 9rem !important;
   }
 }

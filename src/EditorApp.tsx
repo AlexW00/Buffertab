@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react'
 import MDEditor from '@uiw/react-md-editor'
 import '@uiw/react-md-editor/markdown-editor.css'
@@ -22,6 +21,7 @@ function EditorApp() {
   const hasUnsavedChangesRef = useRef(false)
   const lastSavedContentRef = useRef('')
   const currentContentRef = useRef('')
+  const lastSavedModeRef = useRef<'edit' | 'live' | 'view'>('edit')
 
   // Theme detection
   useEffect(() => {
@@ -42,16 +42,21 @@ function EditorApp() {
       if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
         e.preventDefault()
         setPreviewMode(prev => {
-          switch (prev) {
-            case 'edit':
-              return 'live'
-            case 'live':
-              return 'view'
-            case 'view':
-              return 'edit'
-            default:
-              return 'edit'
-          }
+          const newMode = (() => {
+            switch (prev) {
+              case 'edit':
+                return 'live'
+              case 'live':
+                return 'view'
+              case 'view':
+                return 'edit'
+              default:
+                return 'edit'
+            }
+          })()
+          
+          // Save immediately when mode changes (will be handled by the effect below)
+          return newMode
         })
       }
     }
@@ -83,11 +88,15 @@ function EditorApp() {
   }, [])
 
   // Unicode-safe base64 encoding with compression for URL
-  const encodeContent = useCallback(async (text: string): Promise<string> => {
-    if (!text) return ''
+  const encodeContent = useCallback(async (text: string, mode: 'edit' | 'live' | 'view' = 'edit'): Promise<string> => {
+    if (!text && mode === 'edit') return ''
     try {
+      // Create an object with both content and mode
+      const data = { content: text, mode }
+      const jsonString = JSON.stringify(data)
+      
       // First encode to UTF-8 bytes
-      const utf8Bytes = new TextEncoder().encode(text)
+      const utf8Bytes = new TextEncoder().encode(jsonString)
       
       // Compress using gzip
       const compressionStream = new CompressionStream('gzip')
@@ -103,8 +112,8 @@ function EditorApp() {
   }, [])
 
   // Unicode-safe base64 decoding with decompression from URL
-  const decodeContent = useCallback(async (encoded: string): Promise<string> => {
-    if (!encoded) return ''
+  const decodeContent = useCallback(async (encoded: string): Promise<{ content: string, mode: 'edit' | 'live' | 'view' }> => {
+    if (!encoded) return { content: '', mode: 'edit' }
     try {
       // First decode from base64
       const binaryString = atob(encoded)
@@ -119,15 +128,33 @@ function EditorApp() {
       const decompressedBytes = new Uint8Array(await new Response(decompressedStream).arrayBuffer())
       
       // Decode from UTF-8
-      return new TextDecoder().decode(decompressedBytes)
+      const jsonString = new TextDecoder().decode(decompressedBytes)
+      
+      try {
+        // Try to parse as JSON (new format with mode)
+        const data = JSON.parse(jsonString)
+        if (typeof data === 'object' && data !== null && 'content' in data) {
+          return {
+            content: data.content || '',
+            mode: data.mode || 'edit'
+          }
+        }
+      } catch {
+        // If JSON parsing fails, treat as legacy format (plain text)
+        return { content: jsonString, mode: 'edit' }
+      }
+      
+      // Fallback for legacy format
+      return { content: jsonString, mode: 'edit' }
     } catch {
-      return '' // Return empty if decoding fails
+      return { content: '', mode: 'edit' } // Return empty if decoding fails
     }
   }, [])
 
   // Save content to URL (debounced)
   const saveToUrl = useCallback(async (content: string) => {
-    const encoded = await encodeContent(content)
+    const currentMode = previewMode // Use current preview mode
+    const encoded = await encodeContent(content, currentMode)
     const urlLength = encoded.length + 1 // +1 for the # character
     const remaining = MAX_URL_LENGTH - urlLength
     const percentage = Math.round((urlLength / MAX_URL_LENGTH) * 100)
@@ -142,6 +169,35 @@ function EditorApp() {
         window.history.pushState(null, '', `#${encoded}`)
       }
       lastSavedContentRef.current = content
+      lastSavedModeRef.current = currentMode
+      hasUnsavedChangesRef.current = false
+      
+      // Update browser tab title only after successful save
+      updatePageTitle(content)
+    } else {
+      // If over limit, mark as reached but don't save
+      setIsLimitReached(true)
+    }
+  }, [encodeContent, updatePageTitle, previewMode])
+
+  // Save content with specific mode to URL
+  const saveToUrlWithMode = useCallback(async (content: string, mode: 'edit' | 'live' | 'view') => {
+    const encoded = await encodeContent(content, mode)
+    const urlLength = encoded.length + 1 // +1 for the # character
+    const remaining = MAX_URL_LENGTH - urlLength
+    const percentage = Math.round((urlLength / MAX_URL_LENGTH) * 100)
+    
+    setUsagePercentage(percentage)
+    setIsLimitReached(remaining < 0)
+    
+    if (remaining >= 0) {
+      // Update URL hash only if it's different
+      if (window.location.hash.slice(1) !== encoded) {
+        // Use pushState to add to navigation stack instead of replaceState
+        window.history.pushState(null, '', `#${encoded}`)
+      }
+      lastSavedContentRef.current = content
+      lastSavedModeRef.current = mode
       hasUnsavedChangesRef.current = false
       
       // Update browser tab title only after successful save
@@ -191,17 +247,19 @@ function EditorApp() {
   useEffect(() => {
     const hash = window.location.hash.slice(1)
     if (hash) {
-      decodeContent(hash).then(async (decodedContent) => {
-        if (decodedContent) {
-          setMarkdownValue(decodedContent)
-          currentContentRef.current = decodedContent
-          lastSavedContentRef.current = decodedContent
+      decodeContent(hash).then(async (decodedData) => {
+        if (decodedData.content || decodedData.mode !== 'edit') {
+          setMarkdownValue(decodedData.content)
+          setPreviewMode(decodedData.mode)
+          currentContentRef.current = decodedData.content
+          lastSavedContentRef.current = decodedData.content
+          lastSavedModeRef.current = decodedData.mode
           
           // Update browser tab title
-          updatePageTitle(decodedContent)
+          updatePageTitle(decodedData.content)
           
           // Calculate and update usage percentage immediately after loading
-          const encoded = await encodeContent(decodedContent)
+          const encoded = await encodeContent(decodedData.content, decodedData.mode)
           const urlLength = encoded.length + 1
           const percentage = Math.round((urlLength / MAX_URL_LENGTH) * 100)
           setUsagePercentage(percentage)
@@ -219,18 +277,20 @@ function EditorApp() {
     const handlePopState = () => {
       const hash = window.location.hash.slice(1)
       if (hash) {
-        decodeContent(hash).then(async (decodedContent) => {
-          if (decodedContent) {
-            setMarkdownValue(decodedContent)
-            currentContentRef.current = decodedContent
-            lastSavedContentRef.current = decodedContent
+        decodeContent(hash).then(async (decodedData) => {
+          if (decodedData.content || decodedData.mode !== 'edit') {
+            setMarkdownValue(decodedData.content)
+            setPreviewMode(decodedData.mode)
+            currentContentRef.current = decodedData.content
+            lastSavedContentRef.current = decodedData.content
+            lastSavedModeRef.current = decodedData.mode
             hasUnsavedChangesRef.current = false
             
             // Update browser tab title
-            updatePageTitle(decodedContent)
+            updatePageTitle(decodedData.content)
             
             // Calculate and update usage percentage
-            const encoded = await encodeContent(decodedContent)
+            const encoded = await encodeContent(decodedData.content, decodedData.mode)
             const urlLength = encoded.length + 1
             const percentage = Math.round((urlLength / MAX_URL_LENGTH) * 100)
             setUsagePercentage(percentage)
@@ -240,8 +300,10 @@ function EditorApp() {
       } else {
         // If no hash, reset to empty content
         setMarkdownValue('')
+        setPreviewMode('edit')
         currentContentRef.current = ''
         lastSavedContentRef.current = ''
+        lastSavedModeRef.current = 'edit'
         hasUnsavedChangesRef.current = false
         setUsagePercentage(0)
         setIsLimitReached(false)
@@ -321,12 +383,12 @@ function EditorApp() {
     currentContentRef.current = content
     
     // Track that we have unsaved changes
-    if (content !== lastSavedContentRef.current) {
+    if (content !== lastSavedContentRef.current || previewMode !== lastSavedModeRef.current) {
       hasUnsavedChangesRef.current = true
       console.log('Content changed, setting unsaved flag. New content length:', content.length)
       
       // Update usage percentage immediately for feedback
-      const encoded = await encodeContent(content)
+      const encoded = await encodeContent(content, previewMode)
       const urlLength = encoded.length + 1
       const percentage = Math.round((urlLength / MAX_URL_LENGTH) * 100)
       setUsagePercentage(percentage)
@@ -335,7 +397,7 @@ function EditorApp() {
       // Debounce the actual saving
       debouncedSave(content)
     }
-  }, [encodeContent, debouncedSave])
+  }, [encodeContent, debouncedSave, previewMode])
 
   // Map our internal mode to MDEditor's expected preview type
   const getMDEditorPreviewMode = (mode: 'edit' | 'live' | 'view'): 'edit' | 'live' | 'preview' => {
@@ -376,6 +438,13 @@ function EditorApp() {
     saveImmediately()
   }, [saveImmediately])
 
+  // Save immediately when preview mode changes
+  useEffect(() => {
+    if (previewMode !== lastSavedModeRef.current && currentContentRef.current !== undefined) {
+      saveToUrlWithMode(currentContentRef.current, previewMode)
+    }
+  }, [previewMode, saveToUrlWithMode])
+
   return (
     <div className={`app ${theme}`} data-color-mode={theme}>
       <div className="editor-container">
@@ -397,16 +466,20 @@ function EditorApp() {
               title="Press Ctrl+E or Cmd+E to cycle through edit modes"
               onClick={() => {
                 setPreviewMode(prev => {
-                  switch (prev) {
-                    case 'edit':
-                      return 'live'
-                    case 'live':
-                      return 'view'
-                    case 'view':
-                      return 'edit'
-                    default:
-                      return 'edit'
-                  }
+                  const newMode = (() => {
+                    switch (prev) {
+                      case 'edit':
+                        return 'live'
+                      case 'live':
+                        return 'view'
+                      case 'view':
+                        return 'edit'
+                      default:
+                        return 'edit'
+                    }
+                  })()
+                  
+                  return newMode
                 })
               }}
             >
@@ -423,4 +496,4 @@ function EditorApp() {
   )
 }
 
-export default EditorApp 
+export default EditorApp

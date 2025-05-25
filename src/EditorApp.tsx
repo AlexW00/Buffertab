@@ -41,14 +41,13 @@ function EditorApp() {
       // Dynamically adjust the position of editor controls
       if (editorControlsRef.current) {
         if (isKeyboardOpen) {
-          // Position controls above the keyboard with safe area consideration
+          // Position controls above the keyboard
           const keyboardHeight = heightDifference
-          const safeAreaBottom = window.CSS?.supports('bottom: env(safe-area-inset-bottom)') ? 0 : 12
-          const safeOffset = 12 + safeAreaBottom
-          editorControlsRef.current.style.bottom = `calc(${keyboardHeight + safeOffset}px + env(safe-area-inset-bottom, 0px))`
+          const safeOffset = 12 // Base offset from viewport edge
+          editorControlsRef.current.style.bottom = `${keyboardHeight + safeOffset}px`
         } else {
-          // Reset to default position with safe area
-          editorControlsRef.current.style.bottom = 'calc(12px + env(safe-area-inset-bottom, 0px))'
+          // Reset to default position
+          editorControlsRef.current.style.bottom = '12px'
         }
       }
     }
@@ -489,43 +488,6 @@ function EditorApp() {
       saveToUrlWithMode(currentContentRef.current, previewMode)
     }
   }, [previewMode, saveToUrlWithMode])
-
-  // iOS detection for enhanced mobile handling
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-
-  // Enhanced viewport handling for iOS Safari
-  useEffect(() => {
-    if (!isIOS) return
-
-    const handleIOSViewportChange = () => {
-      // Force a reflow to handle iOS Safari address bar changes
-      const appElement = document.querySelector('#app') as HTMLElement
-      if (appElement) {
-        // Temporarily set height to auto to force recalculation
-        appElement.style.height = 'auto'
-        // Force reflow
-        appElement.offsetHeight
-        // Reset to viewport height
-        appElement.style.height = '100dvh'
-        if (!window.CSS?.supports('height: 100dvh')) {
-          appElement.style.height = '100vh'
-        }
-      }
-    }
-
-    // Listen for orientation changes and resize events specific to iOS
-    window.addEventListener('orientationchange', handleIOSViewportChange)
-    window.addEventListener('resize', handleIOSViewportChange)
-    
-    // Initial setup
-    handleIOSViewportChange()
-
-    return () => {
-      window.removeEventListener('orientationchange', handleIOSViewportChange)
-      window.removeEventListener('resize', handleIOSViewportChange)
-    }
-  }, [isIOS])
 
   return (
     <div className={`app ${theme}`} data-color-mode={theme}>

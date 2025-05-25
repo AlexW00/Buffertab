@@ -47,14 +47,19 @@ body {
 
 #app {
   height: 100vh;
-  height: 100dvh; /* Use dynamic viewport height when available */
   width: 100vw;
   overflow: hidden;
 }
 
+/* Modern browsers with dvh support */
+@supports (height: 100dvh) {
+  #app {
+    height: 100dvh;
+  }
+}
+
 .app {
   height: 100vh;
-  height: 100dvh; /* Use dynamic viewport height when available */
   width: 100vw;
   padding: 8px;
   transition: background-color 0.3s ease;
@@ -64,6 +69,13 @@ body {
   padding-left: max(8px, env(safe-area-inset-left, 8px));
   padding-right: max(8px, env(safe-area-inset-right, 8px));
   box-sizing: border-box;
+}
+
+/* Modern browsers with dvh support */
+@supports (height: 100dvh) {
+  .app {
+    height: 100dvh;
+  }
 }
 
 .app.light {
@@ -506,15 +518,6 @@ body {
 
 /* Mobile keyboard detection and adjustment */
 @supports (height: 100dvh) {
-  #app {
-    /* Use dynamic viewport height when supported */
-    height: 100dvh;
-  }
-  
-  .app {
-    height: 100dvh;
-  }
-  
   .editor-controls {
     /* Use dynamic viewport units when available */
     bottom: max(12px, calc(100vh - 100dvh + 12px));
@@ -523,17 +526,28 @@ body {
 
 /* Additional mobile-specific adjustments */
 @media (max-width: 768px) {
+  /* Ensure proper height on mobile devices */
+  html, body {
+    height: 100%;
+    min-height: 100vh;
+  }
+  
+  #app {
+    min-height: 100vh;
+  }
+  
+  .app {
+    min-height: 100vh;
+  }
+  
   /* iOS Safari specific fixes */
   @supports (-webkit-touch-callout: none) {
     #app {
-      /* Fix for iOS Safari address bar behavior */
-      height: -webkit-fill-available;
       min-height: 100vh;
       min-height: 100dvh;
     }
     
     .app {
-      height: -webkit-fill-available;
       min-height: 100vh;
       min-height: 100dvh;
     }

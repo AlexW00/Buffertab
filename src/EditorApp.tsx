@@ -81,6 +81,22 @@ function EditorApp() {
     return () => mediaQuery.removeEventListener('change', handler)
   }, [])
 
+  // Update theme-color meta tag when theme changes
+  useEffect(() => {
+    const themeColor = theme === 'dark' ? '#000000' : '#f7f7f7'
+    
+    // Update or create theme-color meta tag
+    let themeColorMeta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement
+    
+    if (!themeColorMeta) {
+      themeColorMeta = document.createElement('meta')
+      themeColorMeta.setAttribute('name', 'theme-color')
+      document.head.appendChild(themeColorMeta)
+    }
+    
+    themeColorMeta.setAttribute('content', themeColor)
+  }, [theme])
+
   // Keyboard shortcut handler for Ctrl+E/Cmd+E to toggle preview mode
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

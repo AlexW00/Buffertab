@@ -68,34 +68,37 @@ function EditorApp() {
     }
   }, [])
 
-  // Theme detection
+  // Theme detection and theme-color setting
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-    setTheme(mediaQuery.matches ? 'dark' : 'light')
+    
+    const updateTheme = (isDark: boolean) => {
+      const newTheme = isDark ? 'dark' : 'light'
+      setTheme(newTheme)
+      
+      // Update theme-color meta tag immediately
+      const themeColor = newTheme === 'dark' ? '#000000' : '#f7f7f7'
+      let themeColorMeta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement
+      
+      if (!themeColorMeta) {
+        themeColorMeta = document.createElement('meta')
+        themeColorMeta.setAttribute('name', 'theme-color')
+        document.head.appendChild(themeColorMeta)
+      }
+      
+      themeColorMeta.setAttribute('content', themeColor)
+    }
+    
+    // Set initial theme and theme-color
+    updateTheme(mediaQuery.matches)
     
     const handler = (e: MediaQueryListEvent) => {
-      setTheme(e.matches ? 'dark' : 'light')
+      updateTheme(e.matches)
     }
     
     mediaQuery.addEventListener('change', handler)
     return () => mediaQuery.removeEventListener('change', handler)
   }, [])
-
-  // Update theme-color meta tag when theme changes
-  useEffect(() => {
-    const themeColor = theme === 'dark' ? '#000000' : '#f7f7f7'
-    
-    // Update or create theme-color meta tag
-    let themeColorMeta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement
-    
-    if (!themeColorMeta) {
-      themeColorMeta = document.createElement('meta')
-      themeColorMeta.setAttribute('name', 'theme-color')
-      document.head.appendChild(themeColorMeta)
-    }
-    
-    themeColorMeta.setAttribute('content', themeColor)
-  }, [theme])
 
   // Keyboard shortcut handler for Ctrl+E/Cmd+E to toggle preview mode
   useEffect(() => {
